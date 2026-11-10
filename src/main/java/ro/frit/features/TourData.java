@@ -1,7 +1,7 @@
 package ro.frit.features;
 
-import ro.frit.ticketing.domain.Event;
-import ro.frit.ticketing.domain.Venue;
+import ro.frit.ticketing.event.Event;
+import ro.frit.ticketing.event.Venue;
 
 import java.time.LocalDateTime;
 import java.util.List;

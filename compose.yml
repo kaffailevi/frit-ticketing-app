@@ -1,0 +1,11 @@
+# MongoDB for running the app locally:  docker compose up -d   (stop: docker compose down; wipe data: down -v)
+services:
+  mongodb:
+    image: mongo:8.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+
+volumes:
+  mongodb-data:

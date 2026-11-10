@@ -1,0 +1,37 @@
+package ro.frit.ticketing.booking;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import ro.frit.ticketing.booking.dto.BookingResponse;
+import ro.frit.ticketing.booking.dto.CreateBookingRequest;
+
+import java.net.URI;
+
+// Cases: docs/booking-cases.md. 404 and 409 are exceptions from the services, answered by GlobalExceptionHandler.
+@RestController
+@RequestMapping("/events/{eventId}/bookings")
+@RequiredArgsConstructor
+public class BookingController {
+
+    private final BookingService bookingService;
+
+    @PostMapping
+    public ResponseEntity<BookingResponse> book(@PathVariable String eventId, @Valid @RequestBody CreateBookingRequest body) {
+        BookingResponse booking = bookingService.book(eventId, body);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(booking.id()).toUri();
+        return ResponseEntity.created(location).body(booking);
+    }
+
+    @GetMapping("/{bookingId}")
+    public BookingResponse booking(@PathVariable String eventId, @PathVariable String bookingId) {
+        return bookingService.findById(eventId, bookingId);
+    }
+}

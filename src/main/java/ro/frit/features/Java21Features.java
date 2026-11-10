@@ -1,8 +1,6 @@
 package ro.frit.features;
 
-import ro.frit.ticketing.domain.Booking;
-import ro.frit.ticketing.domain.BookingResult;
-import ro.frit.ticketing.domain.Event;
+import ro.frit.ticketing.event.Event;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -23,25 +21,42 @@ public class Java21Features {
         virtualThreads();
     }
 
-    // Each case is a type; a record pattern takes the record apart right in the label; a guard (when) adds a condition.
-    // No default: BookingResult is sealed, so the compiler checks that every outcome is handled.
-    private static void patternsInSwitch() {
-        Booking booking = Booking.builder().id("b1").eventId("e1").customerEmail("ana@example.com").seats(6).build();
-        List<BookingResult> results = List.of(
-                new BookingResult.Confirmed(booking),
-                new BookingResult.SoldOut("e2", 0),
-                new BookingResult.SoldOut("e3", 2),
-                new BookingResult.UnknownEvent("e9"),
-                new BookingResult.AlreadyStarted("e4", LocalDateTime.of(2026, 11, 29, 18, 0)));
+    // Every outcome of a booking as a closed set of records (in session 1 this was the TicketOffice's result type;
+    // since session 3 the services throw exceptions instead, and GlobalExceptionHandler maps them to HTTP).
+    sealed interface BookingOutcome {
+    }
 
-        for (BookingResult result : results) {
-            String advice = switch (result) {
-                case BookingResult.Confirmed(Booking b) when b.getSeats() > 5 -> "group booking, send one invoice";
-                case BookingResult.Confirmed(Booking b) -> "send " + b.getSeats() + " ticket(s)";
-                case BookingResult.SoldOut(String eventId, int left) when left == 0 -> eventId + ": add to waiting list";
-                case BookingResult.SoldOut(String eventId, int left) -> eventId + ": offer the " + left + " seat(s) left";
-                case BookingResult.UnknownEvent(String eventId) -> "check the id " + eventId;
-                case BookingResult.AlreadyStarted(String eventId, LocalDateTime startsAt) -> "suggest the recording of " + eventId;
+    record Confirmed(String eventId, int seats) implements BookingOutcome {
+    }
+
+    record SoldOut(String eventId, int seatsLeft) implements BookingOutcome {
+    }
+
+    record UnknownEvent(String eventId) implements BookingOutcome {
+    }
+
+    record AlreadyStarted(String eventId, LocalDateTime startsAt) implements BookingOutcome {
+    }
+
+    // Each case is a type; a record pattern takes the record apart right in the label; a guard (when) adds a condition.
+    // No default: BookingOutcome is sealed, so the compiler checks that every outcome is handled.
+    private static void patternsInSwitch() {
+        List<BookingOutcome> outcomes = List.of(
+                new Confirmed("e1", 6),
+                new Confirmed("e1", 2),
+                new SoldOut("e2", 0),
+                new SoldOut("e3", 2),
+                new UnknownEvent("e9"),
+                new AlreadyStarted("e4", LocalDateTime.of(2026, 11, 29, 18, 0)));
+
+        for (BookingOutcome outcome : outcomes) {
+            String advice = switch (outcome) {
+                case Confirmed(String eventId, int seats) when seats > 5 -> "group booking for " + eventId + ", send one invoice";
+                case Confirmed(String eventId, int seats) -> "send " + seats + " ticket(s) for " + eventId;
+                case SoldOut(String eventId, int left) when left == 0 -> eventId + ": add to waiting list";
+                case SoldOut(String eventId, int left) -> eventId + ": offer the " + left + " seat(s) left";
+                case UnknownEvent(String eventId) -> "check the id " + eventId;
+                case AlreadyStarted(String eventId, LocalDateTime startsAt) -> "suggest the recording of " + eventId + " (started " + startsAt.toLocalDate() + ")";
             };
             System.out.println("Pattern switch: " + advice);
         }

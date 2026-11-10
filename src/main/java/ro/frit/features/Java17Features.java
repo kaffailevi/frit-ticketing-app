@@ -1,7 +1,7 @@
 package ro.frit.features;
 
-import ro.frit.ticketing.domain.BookingRequest;
-import ro.frit.ticketing.domain.Event;
+import ro.frit.ticketing.event.Event;
+import ro.frit.ticketing.event.Venue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -86,13 +86,13 @@ public class Java17Features {
     }
 
     // Java 16: a record is a class for data. Constructor, accessors, equals, hashCode and toString are generated.
-    // BookingRequest is one; its compact constructor refuses invalid values (see BookingRequestTest).
+    // Venue is one; its compact constructor refuses invalid values (see VenueTest).
     private static void records() {
-        BookingRequest one = new BookingRequest("e1", "ana@example.com", 2);
-        BookingRequest same = new BookingRequest("e1", "ana@example.com", 2);
+        Venue one = new Venue("Cluj Innovation Park", "Cluj-Napoca");
+        Venue same = new Venue("Cluj Innovation Park", "Cluj-Napoca");
         System.out.println("Records: " + one + " equals the same values: " + one.equals(same));
         try {
-            new BookingRequest("e1", "ana@example.com", 0);
+            new Venue("Cluj Innovation Park", " ");
         } catch (IllegalArgumentException refused) {
             System.out.println("  refused at creation: " + refused.getMessage());
         }

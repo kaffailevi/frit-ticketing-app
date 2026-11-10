@@ -1,6 +1,8 @@
 spring:
   application:
     name: ticketing
+  mongodb:
+    database: ticketing   # locally: mongodb://localhost:27017 (compose.yml); in the cloud profile: Atlas
   mvc:
     problemdetails:
       enabled: true   # Spring's own errors (400, 404, 415, ...) are answered as application/problem+json
@@ -8,7 +10,7 @@ spring:
 server:
   port: 8085
 
-# Learning events the app starts with (kept in memory until the database arrives in session 3).
+# Learning events stored by DataSeeder when the events collection is empty.
 ticketing:
   seed-events:
     - id: react-cluj

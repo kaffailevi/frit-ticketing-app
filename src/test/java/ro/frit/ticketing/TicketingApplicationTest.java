@@ -1,20 +1,16 @@
 package ro.frit.ticketing;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import ro.frit.ticketing.domain.TicketOffice;
+import org.springframework.context.annotation.Import;
+import ro.frit.ticketing.config.TestcontainersConfiguration;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
+// The whole application starts, connected to a MongoDB in Docker.
 @SpringBootTest
+@Import(TestcontainersConfiguration.class)
 class TicketingApplicationTest {
 
-    @Autowired
-    private TicketOffice ticketOffice;
-
     @Test
-    void theTicketOfficeStartsWithTheSeedEventsFromTheConfiguration() {
-        assertEquals("Spring Boot 4 Meetup", ticketOffice.findEvent("spring-cluj").orElseThrow().getName());
+    void theApplicationStarts() {
     }
 }
