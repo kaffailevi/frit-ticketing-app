@@ -1,0 +1,10 @@
+### notification-service. Start both services first (see the README), book or cancel something in bookings.http
+@notifications = http://localhost:8086
+
+### Every notification, newest first
+GET {{notifications}}/notifications
+
+### One customer's notifications (what SkillForge's Bookings page shows)
+GET {{notifications}}/notifications?customerEmail=ana@example.com
+
+### RabbitMQ's management UI (queues, dead letters, message rates): http://localhost:15672  — guest / guest
