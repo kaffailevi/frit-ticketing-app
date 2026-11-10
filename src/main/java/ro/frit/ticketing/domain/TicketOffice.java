@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Gatherers;
 
 // Sells seats for a fixed list of events, in memory. Session 1: no framework, no database.
 // The clock is passed in, so a test can decide what "now" is (see docs/booking-cases.md).
@@ -76,6 +77,28 @@ public class TicketOffice {
                 .sorted(Comparator.comparingInt(Event::getBookedSeats).reversed().thenComparing(Event::getName))
                 .limit(limit)
                 .toList();
+    }
+
+    // Java 21 + 22: a switch over the sealed result. The three outcomes without seats share one case,
+    // and '_' says their data is not needed.
+    public int bookAll(List<BookingRequest> requests) {
+        return requests.stream()
+                .map(this::book)
+                .mapToInt(result -> switch (result) {
+                    case BookingResult.Confirmed(Booking booking) -> booking.getSeats();
+                    case BookingResult.SoldOut _, BookingResult.UnknownEvent _, BookingResult.AlreadyStarted _ -> 0;
+                })
+                .sum();
+    }
+
+    // Java 21: every ordered collection has getFirst() and getLast().
+    public Optional<Booking> lastBooking() {
+        return bookings.isEmpty() ? Optional.empty() : Optional.of(bookings.getLast());
+    }
+
+    // Java 24: a gatherer is a custom step in the middle of a stream; windowFixed cuts it into groups.
+    public List<List<Booking>> bookingsInBatches(int size) {
+        return bookings.stream().gather(Gatherers.windowFixed(size)).toList();
     }
 
     public List<Event> upcomingEventsIn(String city) {
