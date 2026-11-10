@@ -78,7 +78,7 @@ public class EventService {
     // Spring then calls this method again, which reads the event afresh: the booking either fits or is sold out.
     // After 3 retries the OptimisticLockingFailureException reaches GlobalExceptionHandler as a 409.
     @Retryable(includes = OptimisticLockingFailureException.class, maxRetries = 3, delay = 20, jitter = 10)
-    public void reserveSeats(String eventId, int seats) {
+    public EventResponse reserveSeats(String eventId, int seats) {
         Event event = getEvent(eventId);
         if (event.hasStartedAt(now())) {
             throw new EventAlreadyStartedException(eventId, event.getStartsAt());
@@ -86,7 +86,7 @@ public class EventService {
         if (seats > event.availableSeats()) {
             throw new NotEnoughSeatsException(eventId, event.availableSeats());
         }
-        eventRepository.save(event.withSeatsBooked(seats));
+        return EventResponse.from(eventRepository.save(event.withSeatsBooked(seats)));
     }
 
     // Called by BookingService when a booking is cancelled: the seats go back on sale, unless the event has started.

@@ -1,4 +1,5 @@
-# MongoDB for running the app locally:  docker compose up -d   (stop: docker compose down; wipe data: down -v)
+# MongoDB and RabbitMQ for running the services locally:  docker compose up -d
+# (stop: docker compose down; also wipe the data: docker compose down -v)
 services:
   mongodb:
     image: mongo:8.0
@@ -6,6 +7,12 @@ services:
       - "27017:27017"
     volumes:
       - mongodb-data:/data/db
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    ports:
+      - "5672:5672"     # AMQP, for the services
+      - "15672:15672"   # management UI: http://localhost:15672 (guest / guest)
 
 volumes:
   mongodb-data:

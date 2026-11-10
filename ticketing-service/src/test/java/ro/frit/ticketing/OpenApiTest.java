@@ -6,6 +6,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
+import ro.frit.ticketing.config.RabbitTestcontainersConfiguration;
 import ro.frit.ticketing.config.TestcontainersConfiguration;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -15,7 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // The API description is generated from the running application and documents the booking errors.
 @SpringBootTest(properties = "spring.mongodb.database=openapi-test")
 @AutoConfigureMockMvc
-@Import(TestcontainersConfiguration.class)
+@Import({TestcontainersConfiguration.class, RabbitTestcontainersConfiguration.class})
 class OpenApiTest {
 
     @Autowired

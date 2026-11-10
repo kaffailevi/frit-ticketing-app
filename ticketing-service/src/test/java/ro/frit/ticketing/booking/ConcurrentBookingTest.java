@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import ro.frit.ticketing.MongoPersistenceTest;
 import ro.frit.ticketing.booking.dto.CreateBookingRequest;
 import ro.frit.ticketing.event.EventRepository;
@@ -26,11 +27,14 @@ import static ro.frit.ticketing.event.EventFixtures.event;
 // 20 one-seat bookings released at the same moment on an event with 10 seats never overbook it.
 // The proof that it tests something: remove @Version from Event and it fails (more seats booked than exist).
 @MongoPersistenceTest
-@Import({BookingService.class, EventService.class, LoggingBookingEventPublisher.class})
+@Import({BookingService.class, EventService.class})
 class ConcurrentBookingTest {
 
     private static final int CAPACITY = 10;
     private static final int CUSTOMERS = 20;
+
+    @MockitoBean // messaging is not what these tests are about; RabbitBookingEventPublisherTest covers it
+    private BookingEventPublisher bookingEvents;
 
     @Autowired
     private BookingService bookingService;

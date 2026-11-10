@@ -2,6 +2,8 @@ package ro.frit.ticketing.booking;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import ro.frit.ticketing.event.dto.EventResponse;
 import ro.frit.ticketing.booking.dto.CreateBookingRequest;
 import ro.frit.ticketing.event.EventCancelled;
 import ro.frit.ticketing.event.EventChanged;
@@ -13,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -43,10 +46,18 @@ class BookingServiceUnitTest {
     }
 
     @Test
-    void aConfirmedBookingIsAnnounced() {
+    void aConfirmedBookingIsAnnouncedWithTheEventsNameAndStartTime() {
+        LocalDateTime startsAt = LocalDateTime.of(2027, 2, 10, 18, 0);
+        when(eventService.reserveSeats("e1", 2)).thenReturn(
+                new EventResponse("e1", "React Workshop", "Hub", "Cluj-Napoca", startsAt, 30, 28));
+
         bookingService.book("e1", new CreateBookingRequest("ana@example.com", 2));
 
-        verify(bookingEvents).publish(any(BookingConfirmed.class));
+        ArgumentCaptor<BookingConfirmed> announced = ArgumentCaptor.forClass(BookingConfirmed.class);
+        verify(bookingEvents).publish(announced.capture());
+        assertEquals("React Workshop", announced.getValue().eventName());
+        assertEquals(startsAt, announced.getValue().eventStartsAt());
+        assertEquals("ana@example.com", announced.getValue().customerEmail());
     }
 
     @Test

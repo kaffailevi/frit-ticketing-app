@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import ro.frit.ticketing.booking.dto.BookingResponse;
 import ro.frit.ticketing.booking.dto.BookingSummaryResponse;
 import ro.frit.ticketing.booking.dto.CreateBookingRequest;
+import ro.frit.ticketing.event.dto.EventResponse;
 import ro.frit.ticketing.event.EventCancelled;
 import ro.frit.ticketing.event.EventChanged;
 import ro.frit.ticketing.event.EventNotFoundException;
@@ -29,7 +30,7 @@ public class BookingService {
     private final BookingEventPublisher bookingEvents; // the port: what the outside world must learn
 
     public BookingResponse book(String eventId, CreateBookingRequest request) {
-        eventService.reserveSeats(eventId, request.seats());
+        EventResponse event = eventService.reserveSeats(eventId, request.seats());
         Booking booking = Booking.builder()
                 .id(UUID.randomUUID().toString())
                 .eventId(eventId)
@@ -38,7 +39,7 @@ public class BookingService {
                 .bookedAt(LocalDateTime.now(clock).truncatedTo(ChronoUnit.MILLIS)) // MongoDB keeps milliseconds
                 .build();
         Booking saved = bookingRepository.insert(booking);
-        bookingEvents.publish(BookingConfirmed.of(saved));
+        bookingEvents.publish(BookingConfirmed.of(saved, event));
         return BookingResponse.from(saved);
     }
 

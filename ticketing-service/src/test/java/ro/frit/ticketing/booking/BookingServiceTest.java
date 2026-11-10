@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import ro.frit.ticketing.MongoPersistenceTest;
 import ro.frit.ticketing.booking.dto.BookingResponse;
 import ro.frit.ticketing.booking.dto.BookingSummaryResponse;
@@ -24,8 +25,11 @@ import static ro.frit.ticketing.event.EventFixtures.tomorrowEvening;
 
 // The booking rows of docs/booking-cases.md, against a real MongoDB.
 @MongoPersistenceTest
-@Import({BookingService.class, EventService.class, LoggingBookingEventPublisher.class})
+@Import({BookingService.class, EventService.class})
 class BookingServiceTest {
+
+    @MockitoBean // messaging is not what these tests are about; RabbitBookingEventPublisherTest covers it
+    private BookingEventPublisher bookingEvents;
 
     @Autowired
     private EventRepository eventRepository;
