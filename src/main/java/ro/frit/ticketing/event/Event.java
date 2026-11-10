@@ -11,7 +11,9 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
 import lombok.Getter;
 import lombok.ToString;
+import lombok.With;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -49,6 +51,14 @@ public class Event {
 
     @PositiveOrZero
     private final int bookedSeats;
+
+    // Optimistic locking: MongoDB saves the event only if its stored version is still the one that was read,
+    // and Spring Data increases it on every save. If someone else saved in between (booked seats at the same
+    // moment), the save throws OptimisticLockingFailureException instead of overwriting their booking.
+    // null = never saved. @With: Spring Data sets the new version on this immutable object through withVersion().
+    @Version
+    @With
+    private final Long version;
 
     public int availableSeats() {
         return capacity - bookedSeats;

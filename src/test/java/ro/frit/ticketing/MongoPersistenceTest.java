@@ -6,6 +6,7 @@ import org.springframework.boot.validation.autoconfigure.ValidationAutoConfigura
 import org.springframework.context.annotation.Import;
 import ro.frit.ticketing.config.FixedClockConfiguration;
 import ro.frit.ticketing.config.MongoConfig;
+import ro.frit.ticketing.config.ResilienceConfig;
 import ro.frit.ticketing.config.TestcontainersConfiguration;
 
 import java.lang.annotation.ElementType;
@@ -14,11 +15,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 // A persistence test: only the MongoDB part of Spring (@DataMongoTest), a MongoDB in Docker, the same validation
-// before saving as the application has, and a fixed clock. Add the services under test with @Import.
+// before saving and the same retries as the application has, and a fixed clock. Add the services under test with @Import.
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @DataMongoTest
 @ImportAutoConfiguration(ValidationAutoConfiguration.class)
-@Import({TestcontainersConfiguration.class, MongoConfig.class, FixedClockConfiguration.class})
+@Import({TestcontainersConfiguration.class, MongoConfig.class, ResilienceConfig.class, FixedClockConfiguration.class})
 public @interface MongoPersistenceTest {
 }

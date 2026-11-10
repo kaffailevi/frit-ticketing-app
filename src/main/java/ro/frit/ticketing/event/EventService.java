@@ -1,8 +1,10 @@
 package ro.frit.ticketing.event;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import ro.frit.ticketing.event.dto.CreateEventRequest;
 import ro.frit.ticketing.event.dto.EventSearchRequest;
@@ -48,6 +50,10 @@ public class EventService {
     }
 
     // Called by BookingService before it records a booking. Throws when the seats cannot be reserved.
+    // When two bookings for the same event save at the same moment, the second save fails (optimistic locking);
+    // Spring then calls this method again, which reads the event afresh: the booking either fits or is sold out.
+    // After 3 retries the OptimisticLockingFailureException reaches GlobalExceptionHandler as a 409.
+    @Retryable(includes = OptimisticLockingFailureException.class, maxRetries = 3, delay = 20, jitter = 10)
     public void reserveSeats(String eventId, int seats) {
         Event event = getEvent(eventId);
         if (event.hasStartedAt(now())) {

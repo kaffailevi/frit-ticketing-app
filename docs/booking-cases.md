@@ -15,6 +15,7 @@ The event used in the examples: **e1**, capacity 10, 8 seats already booked (2 f
 | 5 | The event has already started | an event that started 1 minute ago | `EventAlreadyStartedException`; nothing changes |
 | 6 | The event starts right now | an event whose start time is now | `EventAlreadyStartedException` |
 | 7 | A confirmed booking | `e1`, 2 seats | stored with who booked and when; readable only under `e1` |
+| 8 | 20 customers book 1 seat each at the same moment, 10 seats exist | | never more than 10 seats booked; every confirmed booking stored and counted on the event (`ConcurrentBookingTest`) |
 
 Invalid requests (0 seats, no email) never reach the services: Bean Validation refuses them in the controller (HTTP rows 6–8).
 
@@ -31,6 +32,7 @@ Body: `{"customerEmail": "ana@example.com", "seats": 2}`. The service is a mock 
 | 3 | No such event | 404 | `detail`: "No event with id e9" |
 | 4 | Not enough seats | 409 | `availableSeats` |
 | 5 | The event has already started | 409 | `startsAt` |
+| 5b | Still losing a booking race after 3 retries | 409 | "Someone else booked this event at the same moment" |
 | 6 | Email blank or not an email | 400 | the service is never called |
 | 7 | Seats 0, negative or missing | 400 | the service is never called |
 | 8 | Broken JSON, or seats is not a number | 400 | the service is never called |
@@ -45,4 +47,7 @@ Every error is a ProblemDetail (`application/problem+json`).
 ## Not decided yet
 
 - Can the same customer book the same event twice? Today, yes.
-- Two people booking the last seats at the same moment: both could read "2 free". Fixed in session 4 (optimistic locking).
+
+## How overbooking is prevented (session 4)
+
+`Event` has a `@Version` field. MongoDB saves an event only if the stored version is still the one that was read; otherwise Spring Data throws `OptimisticLockingFailureException`. `EventService.reserveSeats` is `@Retryable` on that exception (Spring Framework 7): it reads the event again and either fits the booking or reports it sold out. After 3 retries the client gets a 409. Without `@Version`, `ConcurrentBookingTest` books 20 seats on a 10-seat event.
