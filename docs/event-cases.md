@@ -13,5 +13,10 @@ Each row is one test in `EventControllerTest`. The controller tests replace `Eve
 | 6 | `GET /events/nope` | no such event | 404 | `detail`: "No event with id nope" |
 | 7 | `POST /events` | a valid body | 201 | the new event, and a `Location` header pointing to it |
 | 8 | `POST /events` | blank name, start in the past, or capacity 0 | 400 | a ProblemDetail; the service is never called |
+| 9 | `PUT /events/cloud-iasi` | a valid body | 200 | the updated event; the booked seats stay |
+| 10 | `PUT /events/cloud-iasi` | capacity below the seats already sold | 409 | `bookedSeats` |
+| 11 | `PUT /events/cloud-iasi` | an invalid body | 400 | the service is never called |
+| 12 | `DELETE /events/cloud-iasi` | the event exists | 204 | no body (session 5: its bookings are cancelled too) |
+| 13 | `DELETE /events/nope` | no such event | 404 | a ProblemDetail |
 
 Every error is a ProblemDetail (`application/problem+json`): `type`, `title`, `status`, `detail`, `instance`.

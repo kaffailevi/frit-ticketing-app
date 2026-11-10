@@ -8,10 +8,12 @@ import ro.frit.ticketing.MongoPersistenceTest;
 import ro.frit.ticketing.event.dto.CreateEventRequest;
 import ro.frit.ticketing.event.dto.EventResponse;
 import ro.frit.ticketing.event.dto.EventSearchRequest;
+import ro.frit.ticketing.event.dto.UpdateEventRequest;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static ro.frit.ticketing.config.FixedClockConfiguration.TODAY_AT_NOON;
 import static ro.frit.ticketing.event.EventFixtures.event;
@@ -128,5 +130,48 @@ class EventServiceTest {
                 .stream().map(EventResponse::id).toList();
 
         assertEquals(List.of("past", "next"), found);
+    }
+
+    @Test
+    void anUpdateReplacesTheDetailsAndKeepsTheBookedSeats() {
+        eventRepository.save(tomorrowEvening("e1"));
+
+        EventResponse updated = eventService.update("e1", new UpdateEventRequest(
+                "Renamed", "New Hall", "Iasi", TODAY_AT_NOON.plusDays(3), 20));
+
+        assertEquals("Renamed", updated.name());
+        assertEquals("Iasi", updated.city());
+        assertEquals(12, updated.availableSeats()); // 20 - the 8 already booked
+    }
+
+    @Test
+    void theCapacityCannotGoBelowTheSeatsAlreadySold() {
+        eventRepository.save(tomorrowEvening("e1"));
+
+        CapacityBelowSoldSeatsException refused = assertThrows(CapacityBelowSoldSeatsException.class,
+                () -> eventService.update("e1", new UpdateEventRequest("Same", "Hall", "Iasi", TODAY_AT_NOON.plusDays(1), 7)));
+
+        assertEquals(8, refused.properties().get("bookedSeats"));
+        assertEquals(10, eventRepository.findById("e1").orElseThrow().getCapacity());
+    }
+
+    @Test
+    void updatingAnUnknownEventIsReported() {
+        assertThrows(EventNotFoundException.class, () -> eventService.update("unknown",
+                new UpdateEventRequest("x", "y", "z", TODAY_AT_NOON.plusDays(1), 5)));
+    }
+
+    @Test
+    void aCancelledEventIsGone() {
+        eventRepository.save(tomorrowEvening("e1"));
+
+        eventService.cancel("e1");
+
+        assertFalse(eventRepository.existsById("e1"));
+    }
+
+    @Test
+    void cancellingAnUnknownEventIsReported() {
+        assertThrows(EventNotFoundException.class, () -> eventService.cancel("unknown"));
     }
 }

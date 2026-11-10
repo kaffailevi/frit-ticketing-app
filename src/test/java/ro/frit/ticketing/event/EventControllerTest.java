@@ -8,19 +8,24 @@ import org.springframework.test.web.servlet.MockMvc;
 import ro.frit.ticketing.event.dto.CreateEventRequest;
 import ro.frit.ticketing.event.dto.EventResponse;
 import ro.frit.ticketing.event.dto.EventSearchRequest;
+import ro.frit.ticketing.event.dto.UpdateEventRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -132,5 +137,53 @@ class EventControllerTest {
                 .andExpect(content().contentTypeCompatibleWith(APPLICATION_PROBLEM_JSON));
 
         verify(eventService, never()).create(any());
+    }
+
+    private static final String UPDATE_BODY = """
+            {"name": "Cloud Run Deep Dive", "venueName": "Palas Tech Hub", "city": "Iasi",
+             "startsAt": "2030-03-05T10:00:00", "capacity": 50}""";
+
+    @Test
+    void anEventIsUpdatedWithPut() throws Exception {
+        when(eventService.update(eq("cloud-iasi"), any(UpdateEventRequest.class))).thenReturn(CLOUD);
+
+        mockMvc.perform(put("/events/cloud-iasi").contentType(APPLICATION_JSON).content(UPDATE_BODY))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("cloud-iasi"));
+    }
+
+    @Test
+    void anUpdateBelowTheSoldSeatsIsAConflict() throws Exception {
+        when(eventService.update(eq("cloud-iasi"), any(UpdateEventRequest.class)))
+                .thenThrow(new CapacityBelowSoldSeatsException("cloud-iasi", 60));
+
+        mockMvc.perform(put("/events/cloud-iasi").contentType(APPLICATION_JSON).content(UPDATE_BODY))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.bookedSeats").value(60));
+    }
+
+    @Test
+    void anInvalidUpdateIsABadRequest() throws Exception {
+        mockMvc.perform(put("/events/cloud-iasi").contentType(APPLICATION_JSON).content("""
+                        {"name": "", "venueName": "Hub", "city": "Iasi", "startsAt": "2030-03-05T10:00:00"}"""))
+                .andExpect(status().isBadRequest());
+
+        verify(eventService, never()).update(any(), any());
+    }
+
+    @Test
+    void aCancelledEventAnswersNoContent() throws Exception {
+        mockMvc.perform(delete("/events/cloud-iasi"))
+                .andExpect(status().isNoContent());
+
+        verify(eventService).cancel("cloud-iasi");
+    }
+
+    @Test
+    void cancellingAnUnknownEventIsNotFound() throws Exception {
+        doThrow(new EventNotFoundException("nope")).when(eventService).cancel("nope");
+
+        mockMvc.perform(delete("/events/nope"))
+                .andExpect(status().isNotFound());
     }
 }

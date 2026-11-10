@@ -8,6 +8,7 @@ import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import ro.frit.ticketing.event.dto.CreateEventRequest;
 import ro.frit.ticketing.event.dto.EventSearchRequest;
+import ro.frit.ticketing.event.dto.UpdateEventRequest;
 import ro.frit.ticketing.event.dto.EventResponse;
 
 import java.time.Clock;
@@ -47,6 +48,21 @@ public class EventService {
 
     public EventResponse create(CreateEventRequest request) {
         return EventResponse.from(eventRepository.insert(request.toEvent(UUID.randomUUID().toString())));
+    }
+
+    // PUT replaces the details; the booked seats stay. The capacity can never go below the seats already sold.
+    public EventResponse update(String id, UpdateEventRequest request) {
+        Event event = getEvent(id);
+        if (request.capacity() < event.getBookedSeats()) {
+            throw new CapacityBelowSoldSeatsException(id, event.getBookedSeats());
+        }
+        Event updated = event.withDetails(request.name(), new Venue(request.venueName(), request.city()),
+                request.startsAt(), request.capacity());
+        return EventResponse.from(eventRepository.save(updated));
+    }
+
+    public void cancel(String id) {
+        eventRepository.delete(getEvent(id));
     }
 
     // Called by BookingService before it records a booking. Throws when the seats cannot be reserved.

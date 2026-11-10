@@ -57,4 +57,20 @@ class EventTest {
     void twoEventsWithDifferentIdsAreDifferentEvents() {
         assertNotEquals(workshop().build(), workshop().id("e2").build());
     }
+
+    @Test
+    void aNewNamePlaceOrTimeMattersToCustomers() {
+        Event event = workshop().build();
+
+        assertTrue(event.withDetails("Renamed", event.getVenue(), event.getStartsAt(), 10).differsForCustomersFrom(event));
+        assertTrue(event.withDetails(event.getName(), new Venue("Other", "Iasi"), event.getStartsAt(), 10).differsForCustomersFrom(event));
+        assertTrue(event.withDetails(event.getName(), event.getVenue(), EVENING.plusHours(1), 10).differsForCustomersFrom(event));
+    }
+
+    @Test
+    void aNewCapacityAloneDoesNotMatterToCustomers() {
+        Event event = workshop().build();
+
+        assertFalse(event.withDetails(event.getName(), event.getVenue(), event.getStartsAt(), 99).differsForCustomersFrom(event));
+    }
 }

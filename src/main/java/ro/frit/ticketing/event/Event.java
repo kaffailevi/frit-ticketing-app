@@ -71,4 +71,18 @@ public class Event {
     public Event withSeatsBooked(int seats) {
         return toBuilder().bookedSeats(bookedSeats + seats).build();
     }
+
+    public Event withSeatsReleased(int seats) {
+        return toBuilder().bookedSeats(bookedSeats - seats).build();
+    }
+
+    // The same event (id, booked seats, version) with new details.
+    public Event withDetails(String newName, Venue newVenue, LocalDateTime newStartsAt, int newCapacity) {
+        return toBuilder().name(newName).venue(newVenue).startsAt(newStartsAt).capacity(newCapacity).build();
+    }
+
+    // What a customer cares about: the name, the place and the time. The capacity is the organiser's business.
+    public boolean differsForCustomersFrom(Event other) {
+        return !name.equals(other.name) || !venue.equals(other.venue) || !startsAt.equals(other.startsAt);
+    }
 }
