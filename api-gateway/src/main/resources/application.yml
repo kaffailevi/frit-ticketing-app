@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: gateway
+
+server:
+  port: 8080
+
+# Where the services run. Locally: the two bootRun ports. In Docker and on Cloud Run: environment variables
+# GATEWAY_TICKETING_URI and GATEWAY_NOTIFICATIONS_URI override these.
+gateway:
+  ticketing-uri: http://localhost:8085
+  notifications-uri: http://localhost:8086
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      probes:
+        enabled: true   # /actuator/health/liveness and /readiness, for Docker and Cloud Run

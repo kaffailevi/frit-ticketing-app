@@ -3,6 +3,8 @@ spring-boot = "4.1.1"
 spring-dependency-management = "1.1.7"
 springdoc = "3.1.1"
 archunit = "1.5.1"
+spring-cloud = "2025.1.4"
+bucket4j = "8.15.0"
 
 # Versions of the libraries below come from Spring Boot's dependency management (JUnit 6, Lombok, ...).
 [libraries]
@@ -15,7 +17,13 @@ spring-boot-starter-amqp = { module = "org.springframework.boot:spring-boot-star
 spring-boot-starter-amqp-test = { module = "org.springframework.boot:spring-boot-starter-amqp-test" }
 testcontainers-rabbitmq = { module = "org.testcontainers:testcontainers-rabbitmq" }
 awaitility = { module = "org.awaitility:awaitility" }
-archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
+spring-cloud-starter-gateway-server-webmvc = { module = "org.springframework.cloud:spring-cloud-starter-gateway-server-webmvc" }
+spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+bucket4j-core = { module = "com.bucket4j:bucket4j_jdk17-core", version.ref = "bucket4j" }
+bucket4j-caffeine = { module = "com.bucket4j:bucket4j_jdk17-caffeine", version.ref = "bucket4j" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine" }
+archunit-junit5 ={ module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
 spring-boot-starter-validation ={ module = "org.springframework.boot:spring-boot-starter-validation" }
 spring-boot-starter-webmvc-test = { module = "org.springframework.boot:spring-boot-starter-webmvc-test" }
 springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
