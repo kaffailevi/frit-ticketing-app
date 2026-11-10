@@ -24,7 +24,7 @@ import static ro.frit.ticketing.event.EventFixtures.tomorrowEvening;
 
 // The booking rows of docs/booking-cases.md, against a real MongoDB.
 @MongoPersistenceTest
-@Import({BookingService.class, EventService.class})
+@Import({BookingService.class, EventService.class, LoggingBookingEventPublisher.class})
 class BookingServiceTest {
 
     @Autowired
@@ -35,6 +35,9 @@ class BookingServiceTest {
 
     @Autowired
     private BookingService bookingService;
+
+    @Autowired
+    private EventService eventService;
 
     @BeforeEach
     void emptyCollections() {
@@ -136,5 +139,16 @@ class BookingServiceTest {
 
         assertThrows(EventAlreadyStartedException.class, () -> bookingService.cancel("started", "b-old"));
         assertEquals(1, bookingRepository.count());
+    }
+
+    // Through Spring's application events: EventService publishes EventCancelled, BookingService listens.
+    @Test
+    void cancellingAnEventCancelsItsBookings() {
+        bookingService.book("e1", new CreateBookingRequest("ana@example.com", 1));
+        bookingService.book("e1", new CreateBookingRequest("dan@example.com", 1));
+
+        eventService.cancel("e1");
+
+        assertEquals(0, bookingRepository.count());
     }
 }

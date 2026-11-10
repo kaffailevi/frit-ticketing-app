@@ -1,10 +1,13 @@
 package ro.frit.ticketing.booking;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import ro.frit.ticketing.booking.dto.BookingResponse;
 import ro.frit.ticketing.booking.dto.BookingSummaryResponse;
 import ro.frit.ticketing.booking.dto.CreateBookingRequest;
+import ro.frit.ticketing.event.EventCancelled;
+import ro.frit.ticketing.event.EventChanged;
 import ro.frit.ticketing.event.EventNotFoundException;
 import ro.frit.ticketing.event.EventService;
 
@@ -23,6 +26,7 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final EventService eventService;
     private final Clock clock;
+    private final BookingEventPublisher bookingEvents; // the port: what the outside world must learn
 
     public BookingResponse book(String eventId, CreateBookingRequest request) {
         eventService.reserveSeats(eventId, request.seats());
@@ -33,7 +37,9 @@ public class BookingService {
                 .seats(request.seats())
                 .bookedAt(LocalDateTime.now(clock).truncatedTo(ChronoUnit.MILLIS)) // MongoDB keeps milliseconds
                 .build();
-        return BookingResponse.from(bookingRepository.insert(booking));
+        Booking saved = bookingRepository.insert(booking);
+        bookingEvents.publish(BookingConfirmed.of(saved));
+        return BookingResponse.from(saved);
     }
 
     // The booking must belong to the event in the path; otherwise any booking could be read through any event's URL.
@@ -51,6 +57,22 @@ public class BookingService {
         Booking booking = getBooking(eventId, bookingId);
         eventService.releaseSeats(eventId, booking.getSeats());
         bookingRepository.delete(booking);
+        bookingEvents.publish(BookingCancelled.of(booking, BookingCancelled.Reason.BY_CUSTOMER));
+    }
+
+    // EventService published that an event was cancelled: its bookings go too, and every customer is told.
+    @EventListener
+    public void onEventCancelled(EventCancelled cancelled) {
+        List<Booking> bookings = bookingRepository.findByEventIdOrderByBookedAt(cancelled.eventId());
+        bookingRepository.deleteAll(bookings);
+        bookings.forEach(booking -> bookingEvents.publish(BookingCancelled.of(booking, BookingCancelled.Reason.EVENT_CANCELLED)));
+    }
+
+    // The name, place or time of an event changed: every customer who booked it is told, with their own booking.
+    @EventListener
+    public void onEventChanged(EventChanged changed) {
+        bookingRepository.findByEventIdOrderByBookedAt(changed.eventId())
+                .forEach(booking -> bookingEvents.publish(BookedEventChanged.of(booking, changed)));
     }
 
     // An event without bookings has an empty report; an unknown event is a 404.

@@ -26,7 +26,7 @@ import static ro.frit.ticketing.event.EventFixtures.event;
 // 20 one-seat bookings released at the same moment on an event with 10 seats never overbook it.
 // The proof that it tests something: remove @Version from Event and it fails (more seats booked than exist).
 @MongoPersistenceTest
-@Import({BookingService.class, EventService.class})
+@Import({BookingService.class, EventService.class, LoggingBookingEventPublisher.class})
 class ConcurrentBookingTest {
 
     private static final int CAPACITY = 10;

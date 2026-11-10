@@ -1,6 +1,7 @@
 package ro.frit.ticketing.event;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -26,6 +27,7 @@ public class EventService {
 
     private final EventRepository eventRepository;
     private final Clock clock;
+    private final ApplicationEventPublisher applicationEvents; // in-process events: EventChanged, EventCancelled
 
     // Without a "from", only events that have not started yet are listed.
     public List<EventResponse> search(EventSearchRequest filter) {
@@ -56,13 +58,19 @@ public class EventService {
         if (request.capacity() < event.getBookedSeats()) {
             throw new CapacityBelowSoldSeatsException(id, event.getBookedSeats());
         }
-        Event updated = event.withDetails(request.name(), new Venue(request.venueName(), request.city()),
-                request.startsAt(), request.capacity());
-        return EventResponse.from(eventRepository.save(updated));
+        Event updated = eventRepository.save(event.withDetails(request.name(),
+                new Venue(request.venueName(), request.city()), request.startsAt(), request.capacity()));
+        if (updated.differsForCustomersFrom(event)) {
+            applicationEvents.publishEvent(EventChanged.of(updated));
+        }
+        return EventResponse.from(updated);
     }
 
+    // The event is deleted, and everyone who listens is told; BookingService cancels its bookings.
     public void cancel(String id) {
-        eventRepository.delete(getEvent(id));
+        Event event = getEvent(id);
+        eventRepository.delete(event);
+        applicationEvents.publishEvent(EventCancelled.of(event));
     }
 
     // Called by BookingService before it records a booking. Throws when the seats cannot be reserved.

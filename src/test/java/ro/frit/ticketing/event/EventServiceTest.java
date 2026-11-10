@@ -4,6 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
 import ro.frit.ticketing.MongoPersistenceTest;
 import ro.frit.ticketing.event.dto.CreateEventRequest;
 import ro.frit.ticketing.event.dto.EventResponse;
@@ -22,6 +24,7 @@ import static ro.frit.ticketing.event.EventFixtures.tomorrowEvening;
 // Reserving seats: the event rows of docs/booking-cases.md. Listing: the queries behind docs/event-cases.md.
 @MongoPersistenceTest
 @Import(EventService.class)
+@RecordApplicationEvents
 class EventServiceTest {
 
     @Autowired
@@ -29,6 +32,9 @@ class EventServiceTest {
 
     @Autowired
     private EventService eventService;
+
+    @Autowired
+    private ApplicationEvents applicationEvents; // what EventService published during the current test
 
     @BeforeEach
     void emptyCollection() {
@@ -162,12 +168,33 @@ class EventServiceTest {
     }
 
     @Test
-    void aCancelledEventIsGone() {
+    void aCancelledEventIsGoneAndItsCancellationIsPublished() {
         eventRepository.save(tomorrowEvening("e1"));
 
         eventService.cancel("e1");
 
         assertFalse(eventRepository.existsById("e1"));
+        assertEquals(1, applicationEvents.stream(EventCancelled.class).filter(e -> e.eventId().equals("e1")).count());
+    }
+
+    @Test
+    void aNewNameIsPublishedAsAChange() {
+        eventRepository.save(tomorrowEvening("e1"));
+
+        eventService.update("e1", new UpdateEventRequest("New name", "Venue e1", "Cluj-Napoca",
+                TODAY_AT_NOON.plusDays(1).withHour(19), 10));
+
+        assertEquals(1, applicationEvents.stream(EventChanged.class).count());
+    }
+
+    @Test
+    void aNewCapacityAloneIsNotPublished() {
+        eventRepository.save(tomorrowEvening("e1"));
+
+        eventService.update("e1", new UpdateEventRequest("Event e1", "Venue e1", "Cluj-Napoca",
+                TODAY_AT_NOON.plusDays(1).withHour(19), 50));
+
+        assertEquals(0, applicationEvents.stream(EventChanged.class).count());
     }
 
     @Test
