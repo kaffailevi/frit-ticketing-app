@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: ticketing
+  mvc:
+    problemdetails:
+      enabled: true   # Spring's own errors (400, 404, 415, ...) are answered as application/problem+json
+
+server:
+  port: 8085
+
+# Learning events the app starts with (kept in memory until the database arrives in session 3).
+ticketing:
+  seed-events:
+    - id: react-cluj
+      name: "React Workshop: Hooks in Practice"
+      venue-name: Cluj Innovation Park
+      city: Cluj-Napoca
+      starts-at: 2027-02-10T18:00:00
+      capacity: 30
+    - id: spring-cluj
+      name: Spring Boot 4 Meetup
+      venue-name: The Office
+      city: Cluj-Napoca
+      starts-at: 2027-02-24T18:30:00
+      capacity: 80
+    - id: cloud-iasi
+      name: Google Cloud Run Hands-on
+      venue-name: Palas Tech Hub
+      city: Iasi
+      starts-at: 2027-03-05T10:00:00
+      capacity: 40
+    - id: ai-bucuresti
+      name: AI Tools for Developers
+      venue-name: Impact Hub
+      city: Bucuresti
+      starts-at: 2027-03-18T17:00:00
+      capacity: 120
+    - id: java-brasov
+      name: Modern Java 25 Day
+      venue-name: Brasov Business Park
+      city: Brasov
+      starts-at: 2027-04-02T09:30:00
+      capacity: 60
