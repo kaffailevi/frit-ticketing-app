@@ -1,0 +1,21 @@
+# Every push and pull request: compile and run all tests on a clean Linux machine with Java 25.
+name: Build
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v5   # caches Gradle's downloads between runs
+      - run: ./gradlew build
