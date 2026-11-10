@@ -10,6 +10,7 @@ server:
 gateway:
   ticketing-uri: http://localhost:8085
   notifications-uri: http://localhost:8086
+  api-key: ${GATEWAY_API_KEY:}   # a secret: only from the environment. Empty = no check (local development only)
   rate-limit:
     capacity: 20     # requests per client ...
     period: 10s      # ... per 10 seconds; the 21st gets 429
