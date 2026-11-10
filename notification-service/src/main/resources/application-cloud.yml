@@ -1,0 +1,17 @@
+# The cloud profile: MongoDB Atlas and CloudAMQP, from the same environment variables as ticketing.
+#   ./gradlew :notification-service:bootRun --args='--spring.profiles.active=cloud'
+spring:
+  mongodb:
+    protocol: mongodb+srv
+    host: ${MONGODB_HOST}
+    username: ${MONGODB_USERNAME}
+    password: ${MONGODB_PASSWORD}
+    database: frit-notifications   # its own database in the same cluster
+  rabbitmq:
+    host: ${CLOUDAMQP_HOST}
+    port: 5671
+    username: ${CLOUDAMQP_USERNAME}
+    password: ${CLOUDAMQP_PASSWORD}
+    virtual-host: ${CLOUDAMQP_VHOST:${CLOUDAMQP_USERNAME}}
+    ssl:
+      enabled: true

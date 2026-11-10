@@ -1,6 +1,6 @@
-# The cloud profile: the database is MongoDB Atlas instead of the local Docker container.
-#   ./gradlew bootRun --args='--spring.profiles.active=cloud'
-# Host, user and password come from environment variables (Windows: user variables); none is ever written in a file.
+# The cloud profile: MongoDB Atlas and CloudAMQP instead of the local Docker containers.
+#   ./gradlew :ticketing-service:bootRun --args='--spring.profiles.active=cloud'
+# Hosts, users and passwords come from environment variables (Windows: user variables); none is ever written in a file.
 spring:
   mongodb:
     protocol: mongodb+srv          # Atlas: the driver finds the cluster's servers through DNS
@@ -8,3 +8,12 @@ spring:
     username: ${MONGODB_USERNAME}
     password: ${MONGODB_PASSWORD}
     database: ${MONGODB_DATABASE:frit-ticketing}
+  rabbitmq:
+    # CloudAMQP, from the console's AMQP details: TLS on port 5671. On the free plan the virtual host is the username.
+    host: ${CLOUDAMQP_HOST}        # e.g. kangaroo.rmq.cloudamqp.com
+    port: 5671
+    username: ${CLOUDAMQP_USERNAME}
+    password: ${CLOUDAMQP_PASSWORD}
+    virtual-host: ${CLOUDAMQP_VHOST:${CLOUDAMQP_USERNAME}}
+    ssl:
+      enabled: true
