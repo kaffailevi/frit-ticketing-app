@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: notification
+  mongodb:
+    database: notifications   # its own database: services never share their data
+  mvc:
+    problemdetails:
+      enabled: true
+
+server:
+  port: 8086
