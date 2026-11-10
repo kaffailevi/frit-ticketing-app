@@ -9,6 +9,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import ro.frit.ticketing.booking.dto.BookingResponse;
+import ro.frit.ticketing.booking.dto.BookingSummaryResponse;
 import ro.frit.ticketing.booking.dto.CreateBookingRequest;
 import ro.frit.ticketing.event.EventAlreadyStartedException;
 import ro.frit.ticketing.event.EventNotFoundException;
@@ -157,6 +158,26 @@ class BookingControllerTest {
         when(bookingService.findById("e2", "b1")).thenThrow(new BookingNotFoundException("e2", "b1"));
 
         mockMvc.perform(get("/events/e2/bookings/b1"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(APPLICATION_PROBLEM_JSON));
+    }
+
+    @Test
+    void theSummaryOfAnEventIsReturned() throws Exception {
+        when(bookingService.summaryFor("e1")).thenReturn(new BookingSummaryResponse("e1", 3, 6, 2.0));
+
+        mockMvc.perform(get("/events/e1/bookings/summary"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.bookings").value(3))
+                .andExpect(jsonPath("$.seats").value(6))
+                .andExpect(jsonPath("$.averageSeatsPerBooking").value(2.0));
+    }
+
+    @Test
+    void theSummaryOfAnUnknownEventIsNotFound() throws Exception {
+        when(bookingService.summaryFor("e9")).thenThrow(new EventNotFoundException("e9"));
+
+        mockMvc.perform(get("/events/e9/bookings/summary"))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentTypeCompatibleWith(APPLICATION_PROBLEM_JSON));
     }

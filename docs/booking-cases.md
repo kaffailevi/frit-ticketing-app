@@ -37,6 +37,8 @@ Body: `{"customerEmail": "ana@example.com", "seats": 2}`. The service is a mock 
 | 9 | Not JSON | 415 | the service is never called |
 | 10 | `GET /events/e1/bookings/b1` | 200 | the booking |
 | 11 | `GET` a booking through another event's URL | 404 | a booking is only visible under its own event |
+| 12 | `GET /events/e1/bookings/summary` | 200 | `bookings`, `seats`, `averageSeatsPerBooking` (computed by MongoDB; empty report when there are no bookings) |
+| 13 | `GET /events/e9/bookings/summary`, no such event | 404 | a ProblemDetail |
 
 Every error is a ProblemDetail (`application/problem+json`).
 

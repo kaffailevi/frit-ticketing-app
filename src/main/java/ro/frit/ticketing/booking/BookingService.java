@@ -3,7 +3,9 @@ package ro.frit.ticketing.booking;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ro.frit.ticketing.booking.dto.BookingResponse;
+import ro.frit.ticketing.booking.dto.BookingSummaryResponse;
 import ro.frit.ticketing.booking.dto.CreateBookingRequest;
+import ro.frit.ticketing.event.EventNotFoundException;
 import ro.frit.ticketing.event.EventService;
 
 import java.time.Clock;
@@ -39,5 +41,13 @@ public class BookingService {
                 .filter(booking -> booking.getEventId().equals(eventId))
                 .map(BookingResponse::from)
                 .orElseThrow(() -> new BookingNotFoundException(eventId, bookingId));
+    }
+
+    // An event without bookings has an empty report; an unknown event is a 404.
+    public BookingSummaryResponse summaryFor(String eventId) {
+        if (!eventService.exists(eventId)) {
+            throw new EventNotFoundException(eventId);
+        }
+        return bookingRepository.summaryFor(eventId).orElseGet(() -> BookingSummaryResponse.empty(eventId));
     }
 }

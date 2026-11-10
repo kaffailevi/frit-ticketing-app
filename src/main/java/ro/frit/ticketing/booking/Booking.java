@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
+import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -21,6 +22,7 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
+@FieldNameConstants
 @Document(collection = "bookings")
 public class Booking {
 

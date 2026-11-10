@@ -10,6 +10,9 @@ Content-Type: application/json
 ### Read a booking: copy the id from the Location header above
 GET {{host}}/events/react-cluj/bookings/PASTE-THE-BOOKING-ID
 
+### The bookings report of an event (an aggregation inside MongoDB)
+GET {{host}}/events/react-cluj/bookings/summary
+
 ### More seats than are free: 409 with availableSeats
 POST {{host}}/events/react-cluj/bookings
 Content-Type: application/json

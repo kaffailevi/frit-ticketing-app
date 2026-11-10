@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import ro.frit.ticketing.booking.dto.BookingResponse;
+import ro.frit.ticketing.booking.dto.BookingSummaryResponse;
 import ro.frit.ticketing.booking.dto.CreateBookingRequest;
 
 import java.net.URI;
@@ -28,6 +29,12 @@ public class BookingController {
         BookingResponse booking = bookingService.book(eventId, body);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(booking.id()).toUri();
         return ResponseEntity.created(location).body(booking);
+    }
+
+    // "/summary" is more specific than "/{bookingId}", so Spring picks this method for it.
+    @GetMapping("/summary")
+    public BookingSummaryResponse summary(@PathVariable String eventId) {
+        return bookingService.summaryFor(eventId);
     }
 
     @GetMapping("/{bookingId}")

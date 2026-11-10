@@ -6,7 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import ro.frit.ticketing.MongoPersistenceTest;
 import ro.frit.ticketing.booking.dto.BookingResponse;
+import ro.frit.ticketing.booking.dto.BookingSummaryResponse;
 import ro.frit.ticketing.booking.dto.CreateBookingRequest;
+import ro.frit.ticketing.event.EventFixtures;
 import ro.frit.ticketing.event.EventNotFoundException;
 import ro.frit.ticketing.event.EventRepository;
 import ro.frit.ticketing.event.EventService;
@@ -73,5 +75,26 @@ class BookingServiceTest {
         BookingResponse booking = bookingService.book("e1", new CreateBookingRequest("ana@example.com", 1));
 
         assertThrows(BookingNotFoundException.class, () -> bookingService.findById("e2", booking.id()));
+    }
+
+    @Test
+    void theSummaryCountsTheBookingsAndAddsUpAndAveragesTheirSeats() {
+        eventRepository.save(EventFixtures.event("big", "Iasi", TODAY_AT_NOON.plusDays(5), 100, 0));
+        bookingService.book("big", new CreateBookingRequest("ana@example.com", 2));
+        bookingService.book("big", new CreateBookingRequest("dan@example.com", 1));
+        bookingService.book("big", new CreateBookingRequest("ioana@example.com", 3));
+        bookingService.book("e1", new CreateBookingRequest("other@example.com", 1)); // another event: not counted
+
+        assertEquals(new BookingSummaryResponse("big", 3, 6, 2.0), bookingService.summaryFor("big"));
+    }
+
+    @Test
+    void anEventWithoutBookingsHasAnEmptySummary() {
+        assertEquals(BookingSummaryResponse.empty("e1"), bookingService.summaryFor("e1"));
+    }
+
+    @Test
+    void theSummaryOfAnUnknownEventIsNotFound() {
+        assertThrows(EventNotFoundException.class, () -> bookingService.summaryFor("unknown"));
     }
 }
