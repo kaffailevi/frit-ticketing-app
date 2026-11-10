@@ -1,10 +1,29 @@
 # Ticketing app
 
+[![Build](https://github.com/kaffailevi/frit-ticketing-app/actions/workflows/build.yml/badge.svg)](https://github.com/kaffailevi/frit-ticketing-app/actions/workflows/build.yml)
+
 My version of the course project from **FutureReady IT — Module 2: modern architecture with Java and Cloud**: a small distributed ticketing system for learning events, built session by session and deployed to Google Cloud.
 
 ## Stack
 
-Java 25 · Gradle 9 (Kotlin DSL, version catalog) · JUnit 6
+Java 25 · Spring Boot 4.1 (Web MVC, Bean Validation, ProblemDetail) · Gradle 9 (Kotlin DSL, version catalog) · JUnit 6 + MockMvc · GitHub Actions
+
+## Run the API
+
+```bash
+./gradlew bootRun     # http://localhost:8085/events
+```
+
+Try it with the request files in [http/](http/) (IntelliJ HTTP client or VS Code REST Client). What each endpoint answers, including the errors: [docs/event-cases.md](docs/event-cases.md) and [docs/booking-cases.md](docs/booking-cases.md).
+
+| Method | Path | |
+| --- | --- | --- |
+| GET | `/events?city=` | all events, or the upcoming ones in a city |
+| GET | `/events/top?limit=3` | the most booked events |
+| GET | `/events/{id}` | one event |
+| POST | `/events` | create an event |
+| POST | `/events/{eventId}/bookings` | book seats: 201, 404, 409 (sold out / started), 400 |
+| GET | `/events/{eventId}/bookings/{bookingId}` | one booking |
 
 ## Run the tests
 
@@ -31,3 +50,4 @@ java Hello.java                                                    # a compact s
 | Session | What was added |
 | --- | --- |
 | 1 | Gradle project on Java 25; the ticketing domain (`TicketOffice` with a sealed `BookingResult`, tests from [docs/booking-cases.md](docs/booking-cases.md)); a tour of Java 8 → 25 in `src/main/java/ro/frit/features` and `Hello.java` |
+| 2 | Spring Boot REST API for events and bookings; every `BookingResult` mapped to a status and a ProblemDetail; MockMvc tests from the case tables; HTTP request files; CI on GitHub Actions |
