@@ -2,6 +2,9 @@ package ro.frit.notification;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +22,7 @@ import java.util.List;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static ro.frit.notification.config.MessagingConfig.BOOKING_CONFIRMED_QUEUE;
 import static ro.frit.notification.config.MessagingConfig.EXCHANGE;
 import static ro.frit.notification.config.MessagingConfig.deadLetterQueueOf;
@@ -27,6 +31,7 @@ import static ro.frit.notification.config.MessagingConfig.deadLetterQueueOf;
 // ticketing sends it (routing key + message id), and the test waits until the listener has handled it.
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
+@ExtendWith(OutputCaptureExtension.class)
 class BookingEventsListenerTest {
 
     private static final LocalDateTime STARTS_AT = LocalDateTime.of(2027, 2, 10, 18, 0);
@@ -95,6 +100,19 @@ class BookingEventsListenerTest {
         waitForNotifications(1);
         Thread.sleep(500); // give the second copy time to arrive, then check it was not stored
         assertEquals(1, notificationRepository.count());
+    }
+
+    @Test
+    void theBookingRequestsCorrelationIdAppearsInThisServicesLogs(CapturedOutput output) {
+        rabbitTemplate.convertAndSend(EXCHANGE, "booking.confirmed", confirmed(1), message -> {
+            message.getMessageProperties().setMessageId("m-corr");
+            message.getMessageProperties().setHeader(CorrelationIdFilter.HEADER, "corr-42");
+            return message;
+        });
+
+        waitForNotifications(1);
+        assertTrue(output.getOut().lines().anyMatch(line -> line.contains("[corr-42]") && line.contains("Received BookingConfirmed")),
+                "a log line with the correlation id");
     }
 
     @Test

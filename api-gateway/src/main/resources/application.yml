@@ -23,3 +23,7 @@ management:
     health:
       probes:
         enabled: true   # /actuator/health/liveness and /readiness, for Docker and Cloud Run
+
+logging:
+  pattern:
+    level: "%5p [%X{correlationId:-}]"   # every log line shows the request's correlation id (empty outside a request)

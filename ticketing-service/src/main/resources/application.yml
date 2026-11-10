@@ -46,3 +46,7 @@ ticketing:
       city: Brasov
       starts-at: 2027-04-02T09:30:00
       capacity: 60
+
+logging:
+  pattern:
+    level: "%5p [%X{correlationId:-}]"   # every log line shows the request's correlation id (empty outside a request)

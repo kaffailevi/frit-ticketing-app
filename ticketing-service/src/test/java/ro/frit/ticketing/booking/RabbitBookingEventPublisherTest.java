@@ -13,6 +13,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import ro.frit.ticketing.config.RabbitTestcontainersConfiguration;
 import ro.frit.ticketing.config.TestcontainersConfiguration;
+import ro.frit.ticketing.shared.web.CorrelationIdFilter;
+import org.slf4j.MDC;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -67,6 +69,18 @@ class RabbitBookingEventPublisherTest {
         assertNotNull(message.getMessageProperties().getMessageId(), "every message has an id");
         assertTrue(json.contains("\"customerEmail\":\"ana@example.com\""), json);
         assertTrue(json.contains("\"eventName\":\"React Workshop\""), json);
+    }
+
+    @Test
+    void theRequestsCorrelationIdTravelsWithTheMessage() {
+        MDC.put(CorrelationIdFilter.MDC_KEY, "corr-42"); // what CorrelationIdFilter does for an HTTP request
+        try {
+            publisher.publish(new BookingCancelled("b1", "react-cluj", "ana@example.com", 1, BookingCancelled.Reason.BY_CUSTOMER));
+        } finally {
+            MDC.remove(CorrelationIdFilter.MDC_KEY);
+        }
+
+        assertEquals("corr-42", receive().getMessageProperties().getHeader(CorrelationIdFilter.HEADER));
     }
 
     @Test
