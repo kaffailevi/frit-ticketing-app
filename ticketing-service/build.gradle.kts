@@ -31,6 +31,7 @@ dependencies {
     testImplementation(libs.testcontainers.mongodb)
     testImplementation(libs.spring.boot.starter.amqp.test)
     testImplementation(libs.testcontainers.rabbitmq)
+    testImplementation(libs.archunit.junit5)
     testCompileOnly(libs.lombok)
     testAnnotationProcessor(libs.lombok)
     testRuntimeOnly(libs.junit.platform.launcher)
