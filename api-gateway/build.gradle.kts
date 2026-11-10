@@ -26,6 +26,9 @@ dependencyManagement {
 dependencies {
     implementation(libs.spring.cloud.starter.gateway.server.webmvc)
     implementation(libs.spring.boot.starter.actuator)
+    implementation(libs.bucket4j.core)
+    implementation(libs.bucket4j.caffeine)
+    implementation(libs.caffeine)
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
 
