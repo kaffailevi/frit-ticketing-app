@@ -6,7 +6,7 @@ My version of the course project from **FutureReady IT — Module 2: modern arch
 
 ## Stack
 
-Java 25 · Spring Boot 4.1 (Web MVC, Bean Validation, ProblemDetail) · MongoDB 8 with Spring Data (Docker locally, Atlas in the cloud) · RabbitMQ 4 (Docker locally, CloudAMQP in the cloud) · Testcontainers · ArchUnit · Gradle 9 multi-module (Kotlin DSL, version catalog) · JUnit 6 + MockMvc · GitHub Actions
+Java 25 · Spring Boot 4.1 (Web MVC, Bean Validation, ProblemDetail) · MongoDB 8 with Spring Data (Docker locally, Atlas in the cloud) · RabbitMQ 4 (Docker locally, CloudAMQP in the cloud) · Testcontainers · Spring Cloud Gateway (WebMVC) + Bucket4j · ArchUnit · Gradle 9 multi-module (Kotlin DSL, version catalog) · JUnit 6 + MockMvc · GitHub Actions
 
 ## Services
 
@@ -14,16 +14,24 @@ Java 25 · Spring Boot 4.1 (Web MVC, Bean Validation, ProblemDetail) · MongoDB 
 | --- | --- | --- |
 | [ticketing-service](ticketing-service) | 8085 | events and bookings (MongoDB `ticketing`); publishes booking facts to RabbitMQ |
 | [notification-service](notification-service) | 8086 | consumes those facts and stores one notification per message (MongoDB `notifications`) |
+| [api-gateway](api-gateway) | 8080 | the one door for clients: routes `/events/**` and `/notifications/**`, rate limit (429), `X-Correlation-Id`, API key |
 
 ## Run it
 
-Locally, with MongoDB and RabbitMQ in Docker:
+Locally, with MongoDB and RabbitMQ in Docker (each service in its own terminal):
 
 ```bash
 docker compose up -d                          # MongoDB :27017, RabbitMQ :5672 (UI :15672, guest/guest)
 ./gradlew :ticketing-service:bootRun          # http://localhost:8085/events — the learning events are seeded on the first start
-./gradlew :notification-service:bootRun       # http://localhost:8086/notifications (a second terminal)
+./gradlew :notification-service:bootRun       # http://localhost:8086/notifications
+./gradlew :api-gateway:bootRun                # http://localhost:8080/events — the way clients come in
 ```
+
+If another program already uses port 8080, start the gateway with `SERVER_PORT=8090`. Set `GATEWAY_API_KEY` to require an `X-Api-Key` header (always in the cloud; see [http/gateway.http](http/gateway.http)).
+
+### Following one request
+
+Every request gets an `X-Correlation-Id` at the gateway (or keeps the one the client sent). Every log line shows it, `INFO [demo-trace-1] …`, in the gateway, in ticketing, and, carried in the RabbitMQ message header, in the notification service.
 
 Against MongoDB Atlas and CloudAMQP (`cloud` profile). It reads `MONGODB_HOST` (e.g. `cluster0.abcde.mongodb.net`), `MONGODB_USERNAME`, `MONGODB_PASSWORD`, `CLOUDAMQP_HOST`, `CLOUDAMQP_USERNAME` and `CLOUDAMQP_PASSWORD` from the environment, never from a file:
 
@@ -101,3 +109,4 @@ java Hello.java                                                    # a compact s
 | 4 | Search with `Criteria` + `MongoTemplate` (repository fragment); bookings report with an aggregation pipeline; indexes; optimistic locking with `@Version` + Spring 7 `@Retryable` (proved by `ConcurrentBookingTest`); a startup migration for events stored before versions existed |
 | 5 | Complete API (PUT / DELETE events, list and cancel bookings); the `BookingEventPublisher` port with a logging adapter; events inside the application (`EventChanged`, `EventCancelled`) handled by `BookingService`; a unit test with the port mocked; OpenAPI + Swagger UI (springdoc) |
 | 6 | Two services in one Gradle build; the RabbitMQ adapter of the port (topic exchange, JSON, message ids); notification-service with durable queues, dead-letter queues and idempotent storage; `cloud` profiles for Atlas + CloudAMQP; architecture rules with ArchUnit |
+| 7 | `api-gateway` (Spring Cloud Gateway WebMVC): routes, Bucket4j rate limit per client (429 + Retry-After), one `X-Correlation-Id` through all services and RabbitMQ into every log line, API key for callers (`GATEWAY_API_KEY`) |

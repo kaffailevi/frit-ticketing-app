@@ -1,0 +1,27 @@
+### Through the api-gateway: the one door clients (SkillForge's server) use.
+### Locally it runs on 8080; if another program uses 8080, start it with SERVER_PORT=8090.
+### With GATEWAY_API_KEY set, every request needs X-Api-Key (locally e.g. GATEWAY_API_KEY=local-dev-key).
+@gateway = http://localhost:8080
+@key = local-dev-key
+
+### Events through the gateway (the response carries an X-Correlation-Id)
+GET {{gateway}}/events
+X-Api-Key: {{key}}
+
+### Book with your own correlation id, then find it in the logs of all three services
+POST {{gateway}}/events/cloud-iasi/bookings
+X-Api-Key: {{key}}
+X-Correlation-Id: demo-trace-1
+Content-Type: application/json
+
+{"customerEmail": "ana@example.com", "seats": 1}
+
+### One customer's notifications
+GET {{gateway}}/notifications?customerEmail=ana@example.com
+X-Api-Key: {{key}}
+
+### Without the key: 401 ProblemDetail
+GET {{gateway}}/events
+
+### Health: no key needed (Docker and Cloud Run check it)
+GET {{gateway}}/actuator/health
