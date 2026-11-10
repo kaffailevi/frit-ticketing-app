@@ -11,6 +11,8 @@ import org.testcontainers.mongodb.MongoDBContainer;
 @ImportTestcontainers
 public class TestcontainersConfiguration {
 
+    // GLIBC_TUNABLES: MongoDB 8.0 refuses to start on Linux kernel 6.19+ (SERVER-121912), which GitHub's newer
+    // ubuntu runners use; this setting lets it start there. It changes nothing on Docker Desktop.
     @ServiceConnection
-    static MongoDBContainer mongoDB = new MongoDBContainer("mongo:8.0");
+    static MongoDBContainer mongoDB = new MongoDBContainer("mongo:8.0").withEnv("GLIBC_TUNABLES", "glibc.pthread.rseq=1");
 }
