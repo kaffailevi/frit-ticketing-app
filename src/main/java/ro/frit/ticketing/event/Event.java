@@ -12,6 +12,7 @@ import lombok.experimental.FieldNameConstants;
 import lombok.Getter;
 import lombok.ToString;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -26,6 +27,8 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(of = "id")
 @FieldNameConstants
 @Document(collection = "events")
+// The search filters on the city and sorts by start time; one index serves both.
+@CompoundIndex(name = "city_startsAt", def = "{'venue.city': 1, 'startsAt': 1}")
 public class Event {
 
     @Id

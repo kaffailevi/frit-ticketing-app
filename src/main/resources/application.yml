@@ -1,6 +1,9 @@
 spring:
   application:
     name: ticketing
+  data:
+    mongodb:
+      auto-index-creation: true   # create the @Indexed / @CompoundIndex indexes at startup
   mongodb:
     database: ticketing   # locally: mongodb://localhost:27017 (compose.yml); in the cloud profile: Atlas
   mvc:

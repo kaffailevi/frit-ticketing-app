@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.ToString;
 import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -30,6 +31,7 @@ public class Booking {
     private final String id;
 
     @NotBlank
+    @Indexed // every report and every "bookings of this event" query filters on eventId
     private final String eventId;
 
     @NotBlank
