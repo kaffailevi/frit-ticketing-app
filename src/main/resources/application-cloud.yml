@@ -1,0 +1,10 @@
+# The cloud profile: the database is MongoDB Atlas instead of the local Docker container.
+#   ./gradlew bootRun --args='--spring.profiles.active=cloud'
+# Host, user and password come from environment variables (Windows: user variables); none is ever written in a file.
+spring:
+  mongodb:
+    protocol: mongodb+srv          # Atlas: the driver finds the cluster's servers through DNS
+    host: ${MONGODB_HOST}          # e.g. cluster0.abcde.mongodb.net
+    username: ${MONGODB_USERNAME}
+    password: ${MONGODB_PASSWORD}
+    database: ${MONGODB_DATABASE:frit-ticketing}

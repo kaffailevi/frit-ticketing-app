@@ -6,12 +6,21 @@ My version of the course project from **FutureReady IT — Module 2: modern arch
 
 ## Stack
 
-Java 25 · Spring Boot 4.1 (Web MVC, Bean Validation, ProblemDetail) · Gradle 9 (Kotlin DSL, version catalog) · JUnit 6 + MockMvc · GitHub Actions
+Java 25 · Spring Boot 4.1 (Web MVC, Bean Validation, ProblemDetail) · MongoDB 8 with Spring Data (Docker locally, Atlas in the cloud) · Testcontainers · Gradle 9 (Kotlin DSL, version catalog) · JUnit 6 + MockMvc · GitHub Actions
 
 ## Run the API
 
+Locally, with MongoDB in Docker:
+
 ```bash
-./gradlew bootRun     # http://localhost:8085/events
+docker compose up -d   # MongoDB on localhost:27017 (data kept in a volume)
+./gradlew bootRun      # http://localhost:8085/events — the learning events are seeded on the first start
+```
+
+Against MongoDB Atlas (`cloud` profile). It reads `MONGODB_HOST` (e.g. `cluster0.abcde.mongodb.net`), `MONGODB_USERNAME` and `MONGODB_PASSWORD` from the environment, never from a file:
+
+```bash
+./gradlew bootRun --args='--spring.profiles.active=cloud'
 ```
 
 Try it with the request files in [http/](http/) (IntelliJ HTTP client or VS Code REST Client). What each endpoint answers, including the errors: [docs/event-cases.md](docs/event-cases.md) and [docs/booking-cases.md](docs/booking-cases.md).
@@ -31,7 +40,7 @@ Try it with the request files in [http/](http/) (IntelliJ HTTP client or VS Code
 ./gradlew test        # Windows PowerShell: .\gradlew.bat test
 ```
 
-Gradle downloads Java 25 itself if it is not installed (toolchain).
+Gradle downloads Java 25 itself if it is not installed (toolchain). The persistence tests start their own MongoDB in Docker (Testcontainers), so Docker must be running.
 
 ## The Java tour
 
@@ -51,3 +60,4 @@ java Hello.java                                                    # a compact s
 | --- | --- |
 | 1 | Gradle project on Java 25; the ticketing domain (`TicketOffice` with a sealed `BookingResult`, tests from [docs/booking-cases.md](docs/booking-cases.md)); a tour of Java 8 → 25 in `src/main/java/ro/frit/features` and `Hello.java` |
 | 2 | Spring Boot REST API for events and bookings; every `BookingResult` mapped to a status and a ProblemDetail; MockMvc tests from the case tables; HTTP request files; CI on GitHub Actions |
+| 3 | Packages by feature (`event`, `booking`, `shared.error`); events and bookings in MongoDB through Spring Data repositories and services; errors as exceptions → `GlobalExceptionHandler` → ProblemDetail; validation before every save; Testcontainers tests; `DataSeeder`; `compose.yml`; `cloud` profile for Atlas |
