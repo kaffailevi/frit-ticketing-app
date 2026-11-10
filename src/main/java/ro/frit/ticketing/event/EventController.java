@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import ro.frit.ticketing.event.dto.CreateEventRequest;
 import ro.frit.ticketing.event.dto.EventResponse;
+import ro.frit.ticketing.event.dto.EventSearchRequest;
 
 import java.net.URI;
 import java.util.List;
@@ -28,9 +29,10 @@ public class EventController {
 
     private final EventService eventService;
 
+    // GET /events?city=Iasi&name=cloud&from=2027-03-01T00:00:00&to=2027-04-01T00:00:00 — every filter optional.
     @GetMapping
-    public List<EventResponse> events(@RequestParam(required = false) String city) {
-        return city == null || city.isBlank() ? eventService.findAll() : eventService.findUpcomingIn(city);
+    public List<EventResponse> search(EventSearchRequest filter) {
+        return eventService.search(filter);
     }
 
     // "/top" is more specific than "/{id}", so Spring picks this method for GET /events/top.

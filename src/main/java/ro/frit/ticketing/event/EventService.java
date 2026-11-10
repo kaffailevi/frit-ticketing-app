@@ -5,6 +5,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ro.frit.ticketing.event.dto.CreateEventRequest;
+import ro.frit.ticketing.event.dto.EventSearchRequest;
 import ro.frit.ticketing.event.dto.EventResponse;
 
 import java.time.Clock;
@@ -18,21 +19,23 @@ import java.util.UUID;
 public class EventService {
 
     // Most booked first; on a tie, by name, so the order is always the same.
-    private static final Sort MOST_BOOKED_FIRST = Sort.by(Sort.Order.desc("bookedSeats"), Sort.Order.asc("name"));
+    private static final Sort MOST_BOOKED_FIRST = Sort.by(Sort.Order.desc(Event.Fields.bookedSeats), Sort.Order.asc(Event.Fields.name));
 
     private final EventRepository eventRepository;
     private final Clock clock;
 
-    public List<EventResponse> findAll() {
-        return toResponses(eventRepository.findAll());
+    // Without a "from", only events that have not started yet are listed.
+    public List<EventResponse> search(EventSearchRequest filter) {
+        EventSearchRequest effective = filter.from() == null ? filter.withFrom(now()) : filter;
+        return toResponses(eventRepository.search(effective));
+    }
+
+    public boolean exists(String id) {
+        return eventRepository.existsById(id);
     }
 
     public EventResponse findById(String id) {
         return EventResponse.from(getEvent(id));
-    }
-
-    public List<EventResponse> findUpcomingIn(String city) {
-        return toResponses(eventRepository.findByVenueCityIgnoreCaseAndStartsAtAfterOrderByStartsAt(city, now()));
     }
 
     // The sorting and the limit run inside MongoDB; only the requested events travel to the application.

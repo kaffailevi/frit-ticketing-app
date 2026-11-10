@@ -8,6 +8,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
+import lombok.experimental.FieldNameConstants;
 import lombok.Getter;
 import lombok.ToString;
 import org.springframework.data.annotation.Id;
@@ -23,6 +24,7 @@ import java.time.LocalDateTime;
 @Builder(toBuilder = true)
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
+@FieldNameConstants
 @Document(collection = "events")
 public class Event {
 

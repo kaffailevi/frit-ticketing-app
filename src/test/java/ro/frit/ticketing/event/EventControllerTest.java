@@ -7,6 +7,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import ro.frit.ticketing.event.dto.CreateEventRequest;
 import ro.frit.ticketing.event.dto.EventResponse;
+import ro.frit.ticketing.event.dto.EventSearchRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -41,8 +42,8 @@ class EventControllerTest {
     private EventService eventService;
 
     @Test
-    void allEventsAreListed() throws Exception {
-        when(eventService.findAll()).thenReturn(List.of(REACT, CLOUD));
+    void withoutFiltersTheUpcomingEventsAreListed() throws Exception {
+        when(eventService.search(EventSearchRequest.none())).thenReturn(List.of(REACT, CLOUD));
 
         mockMvc.perform(get("/events"))
                 .andExpect(status().isOk())
@@ -56,13 +57,23 @@ class EventControllerTest {
     }
 
     @Test
-    void aCityListsOnlyItsUpcomingEvents() throws Exception {
-        when(eventService.findUpcomingIn("Iasi")).thenReturn(List.of(CLOUD));
+    void everyFilterIsPassedToTheSearch() throws Exception {
+        EventSearchRequest filter = new EventSearchRequest("Iasi", "cloud",
+                LocalDateTime.of(2030, 3, 1, 0, 0), LocalDateTime.of(2030, 4, 1, 0, 0));
+        when(eventService.search(filter)).thenReturn(List.of(CLOUD));
 
-        mockMvc.perform(get("/events").param("city", "Iasi"))
+        mockMvc.perform(get("/events").param("city", "Iasi").param("name", "cloud")
+                        .param("from", "2030-03-01T00:00:00").param("to", "2030-04-01T00:00:00"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].id").value("cloud-iasi"));
+    }
+
+    @Test
+    void aDateThatIsNotIsoIsABadRequest() throws Exception {
+        mockMvc.perform(get("/events").param("from", "next week"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(APPLICATION_PROBLEM_JSON));
     }
 
     @Test

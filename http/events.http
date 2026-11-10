@@ -1,11 +1,14 @@
 ### Requests for IntelliJ's HTTP client (or VS Code's REST Client). Start the app first: ./gradlew bootRun
 @host = http://localhost:8085
 
-### All events
+### Upcoming events (the ones that have not started yet)
 GET {{host}}/events
 
-### Upcoming events in a city (the case of the city does not matter)
-GET {{host}}/events?city=cluj-napoca
+### Search: city (whole name, any case), part of the name, a start-time range — every filter optional
+GET {{host}}/events?city=cluj-napoca&name=react&from=2027-01-01T00:00:00&to=2027-03-01T00:00:00
+
+### Also events that already started: give a "from" in the past
+GET {{host}}/events?from=2020-01-01T00:00:00
 
 ### The most booked events
 GET {{host}}/events/top?limit=2

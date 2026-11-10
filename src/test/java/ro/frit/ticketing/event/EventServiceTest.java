@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Import;
 import ro.frit.ticketing.MongoPersistenceTest;
 import ro.frit.ticketing.event.dto.CreateEventRequest;
 import ro.frit.ticketing.event.dto.EventResponse;
+import ro.frit.ticketing.event.dto.EventSearchRequest;
 
 import java.util.List;
 
@@ -107,13 +108,25 @@ class EventServiceTest {
     }
 
     @Test
-    void upcomingEventsInACityDoNotIncludeEventsThatAlreadyStarted() {
+    void aSearchWithoutAStartDateListsOnlyEventsThatHaveNotStarted() {
         eventRepository.saveAll(List.of(
                 event("past", "Iasi", TODAY_AT_NOON.minusHours(1), 10, 0),
                 event("next", "Iasi", TODAY_AT_NOON.plusHours(1), 10, 0)));
 
-        List<String> upcoming = eventService.findUpcomingIn("iasi").stream().map(EventResponse::id).toList();
+        List<String> found = eventService.search(EventSearchRequest.none()).stream().map(EventResponse::id).toList();
 
-        assertEquals(List.of("next"), upcoming);
+        assertEquals(List.of("next"), found);
+    }
+
+    @Test
+    void aSearchWithAStartDateAlsoListsEventsThatAlreadyStarted() {
+        eventRepository.saveAll(List.of(
+                event("past", "Iasi", TODAY_AT_NOON.minusHours(1), 10, 0),
+                event("next", "Iasi", TODAY_AT_NOON.plusHours(1), 10, 0)));
+
+        List<String> found = eventService.search(EventSearchRequest.none().withFrom(TODAY_AT_NOON.minusDays(1)))
+                .stream().map(EventResponse::id).toList();
+
+        assertEquals(List.of("past", "next"), found);
     }
 }
