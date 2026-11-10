@@ -3,11 +3,13 @@ package ro.frit.ticketing.domain;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 // Sells seats for a fixed list of events, in memory. Session 1: no framework, no database.
 // The clock is passed in, so a test can decide what "now" is (see docs/booking-cases.md).
@@ -53,5 +55,35 @@ public class TicketOffice {
 
     public Optional<Event> findEvent(String id) {
         return Optional.ofNullable(events.get(id));
+    }
+
+    // The queries below are streams: describe what you want, not the loop that finds it.
+
+    public List<Event> eventsWithFreeSeats() {
+        return events.values().stream()
+                .filter(event -> event.availableSeats() > 0)
+                .toList();
+    }
+
+    public Map<String, Integer> bookedSeatsPerEvent() {
+        return bookings.stream()
+                .collect(Collectors.groupingBy(Booking::getEventId, Collectors.summingInt(Booking::getSeats)));
+    }
+
+    // Most booked first; on a tie, alphabetical by name, so the order is always the same.
+    public List<Event> topEventsByBookedSeats(int limit) {
+        return events.values().stream()
+                .sorted(Comparator.comparingInt(Event::getBookedSeats).reversed().thenComparing(Event::getName))
+                .limit(limit)
+                .toList();
+    }
+
+    public List<Event> upcomingEventsIn(String city) {
+        LocalDateTime now = LocalDateTime.now(clock);
+        return events.values().stream()
+                .filter(event -> event.getVenue().city().equalsIgnoreCase(city))
+                .filter(event -> !event.hasStartedAt(now))
+                .sorted(Comparator.comparing(Event::getStartsAt))
+                .toList();
     }
 }
