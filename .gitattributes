@@ -1,0 +1,5 @@
+# Line endings: LF in the repository, so gradlew also runs on Linux (CI, Docker); CRLF only for Windows scripts.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.jar binary
