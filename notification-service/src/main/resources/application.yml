@@ -3,6 +3,13 @@ spring:
     name: notification
   mongodb:
     database: notifications   # its own database: services never share their data
+  data:
+    mongodb:
+      auto-index-creation: true   # the unique index on messageId (idempotency)
+  rabbitmq:
+    listener:
+      simple:
+        default-requeue-rejected: false   # a message that fails goes to its dead-letter queue, not round and round
   mvc:
     problemdetails:
       enabled: true
