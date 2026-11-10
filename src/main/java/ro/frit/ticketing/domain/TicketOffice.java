@@ -58,6 +58,17 @@ public class TicketOffice {
         return Optional.ofNullable(events.get(id));
     }
 
+    public List<Event> allEvents() {
+        return List.copyOf(events.values());
+    }
+
+    public Event addEvent(Event event) {
+        if (events.putIfAbsent(event.getId(), event) != null) {
+            throw new IllegalArgumentException("Two events have the id " + event.getId());
+        }
+        return event;
+    }
+
     // The queries below are streams: describe what you want, not the loop that finds it.
 
     public List<Event> eventsWithFreeSeats() {

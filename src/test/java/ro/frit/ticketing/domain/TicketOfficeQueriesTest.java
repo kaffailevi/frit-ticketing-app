@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TicketOfficeQueriesTest {
 
@@ -33,6 +34,24 @@ class TicketOfficeQueriesTest {
     private final Event past = event("e4", "Past talk", "Cluj-Napoca", TODAY.minusDays(1), 2);
 
     private final TicketOffice office = new TicketOffice(List.of(react, java, cloud, past), Clock.fixed(NOW, ZoneOffset.UTC));
+
+    @Test
+    void allEventsAreListedInTheOrderTheyWereAdded() {
+        assertEquals(List.of(react, java, cloud, past), office.allEvents());
+    }
+
+    @Test
+    void anAddedEventCanBeFoundByItsId() {
+        Event added = office.addEvent(event("e5", "New talk", "Iasi", TODAY.plusDays(7), 0));
+
+        assertEquals(added, office.findEvent("e5").orElseThrow());
+    }
+
+    @Test
+    void anEventWithAnIdThatExistsCannotBeAdded() {
+        assertThrows(IllegalArgumentException.class,
+                () -> office.addEvent(event("e1", "Duplicate", "Iasi", TODAY.plusDays(7), 0)));
+    }
 
     @Test
     void onlyEventsWithFreeSeatsAreListedAsAvailable() {
