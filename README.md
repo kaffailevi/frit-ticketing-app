@@ -31,9 +31,28 @@ Try it with the request files in [http/](http/) (IntelliJ HTTP client or VS Code
 | GET | `/events/top?limit=3` | the most booked events |
 | GET | `/events/{id}` | one event |
 | POST | `/events` | create an event |
+| PUT | `/events/{id}` | update an event (409 if the capacity would drop below the seats sold) |
+| DELETE | `/events/{id}` | cancel an event and its bookings |
 | POST | `/events/{eventId}/bookings` | book seats: 201, 404, 409 (sold out / started / lost a race), 400 |
+| GET | `/events/{eventId}/bookings` | the bookings of an event |
 | GET | `/events/{eventId}/bookings/{bookingId}` | one booking |
+| DELETE | `/events/{eventId}/bookings/{bookingId}` | cancel a booking; the seats go back on sale |
 | GET | `/events/{eventId}/bookings/summary` | bookings report (MongoDB aggregation) |
+
+The whole API, generated from the code: http://localhost:8085/swagger-ui.html (JSON: `/v3/api-docs`).
+
+## Architecture
+
+```
+EventController ─▶ EventService ─▶ EventRepository ─▶ MongoDB (events)
+                       │ publishes EventChanged / EventCancelled (Spring application events)
+                       ▼
+BookingController ─▶ BookingService ─▶ BookingRepository ─▶ MongoDB (bookings)
+                       │ BookingConfirmed / BookingCancelled / BookedEventChanged
+                       ▼
+                 BookingEventPublisher  (a port)
+                       └─ LoggingBookingEventPublisher (adapter today; RabbitMQ from session 6)
+```
 
 ## Run the tests
 
@@ -63,3 +82,4 @@ java Hello.java                                                    # a compact s
 | 2 | Spring Boot REST API for events and bookings; every `BookingResult` mapped to a status and a ProblemDetail; MockMvc tests from the case tables; HTTP request files; CI on GitHub Actions |
 | 3 | Packages by feature (`event`, `booking`, `shared.error`); events and bookings in MongoDB through Spring Data repositories and services; errors as exceptions → `GlobalExceptionHandler` → ProblemDetail; validation before every save; Testcontainers tests; `DataSeeder`; `compose.yml`; `cloud` profile for Atlas |
 | 4 | Search with `Criteria` + `MongoTemplate` (repository fragment); bookings report with an aggregation pipeline; indexes; optimistic locking with `@Version` + Spring 7 `@Retryable` (proved by `ConcurrentBookingTest`); a startup migration for events stored before versions existed |
+| 5 | Complete API (PUT / DELETE events, list and cancel bookings); the `BookingEventPublisher` port with a logging adapter; events inside the application (`EventChanged`, `EventCancelled`) handled by `BookingService`; a unit test with the port mocked; OpenAPI + Swagger UI (springdoc) |

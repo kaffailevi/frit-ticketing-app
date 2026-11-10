@@ -10,6 +10,12 @@ Content-Type: application/json
 ### Read a booking: copy the id from the Location header above
 GET {{host}}/events/react-cluj/bookings/PASTE-THE-BOOKING-ID
 
+### All bookings of an event, oldest first
+GET {{host}}/events/react-cluj/bookings
+
+### Cancel a booking: 204, the seats go back on sale (409 once the event has started)
+DELETE {{host}}/events/react-cluj/bookings/PASTE-THE-BOOKING-ID
+
 ### The bookings report of an event (an aggregation inside MongoDB)
 GET {{host}}/events/react-cluj/bookings/summary
 

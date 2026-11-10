@@ -25,7 +25,16 @@ Content-Type: application/json
 
 {"name": "Kubernetes Basics", "venueName": "Cowork Timisoara", "city": "Timisoara", "startsAt": "2027-05-12T18:00:00", "capacity": 25}
 
-### Invalid event: 400, the office is never called
+### Update an event (PUT replaces the details; the booked seats stay). Customers who booked are told if name, place or time change
+PUT {{host}}/events/cloud-iasi
+Content-Type: application/json
+
+{"name": "Google Cloud Run Deep Dive", "venueName": "Palas Tech Hub", "city": "Iasi", "startsAt": "2027-03-05T10:00:00", "capacity": 50}
+
+### Cancel an event: 204; its bookings are cancelled and every customer is told
+DELETE {{host}}/events/java-brasov
+
+### Invalid event: 400, the service is never called
 POST {{host}}/events
 Content-Type: application/json
 
