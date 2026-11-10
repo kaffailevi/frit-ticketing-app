@@ -58,6 +58,10 @@ public class TicketOffice {
         return Optional.ofNullable(events.get(id));
     }
 
+    public Optional<Booking> findBooking(String id) {
+        return bookings.stream().filter(booking -> booking.getId().equals(id)).findFirst();
+    }
+
     public List<Event> allEvents() {
         return List.copyOf(events.values());
     }

@@ -11,6 +11,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TicketOfficeQueriesTest {
 
@@ -51,6 +52,19 @@ class TicketOfficeQueriesTest {
     void anEventWithAnIdThatExistsCannotBeAdded() {
         assertThrows(IllegalArgumentException.class,
                 () -> office.addEvent(event("e1", "Duplicate", "Iasi", TODAY.plusDays(7), 0)));
+    }
+
+    @Test
+    void aConfirmedBookingCanBeFoundByItsId() {
+        BookingResult.Confirmed confirmed =
+                (BookingResult.Confirmed) office.book(new BookingRequest("e1", "ana@example.com", 1));
+
+        assertEquals(confirmed.booking(), office.findBooking(confirmed.booking().getId()).orElseThrow());
+    }
+
+    @Test
+    void anUnknownBookingIdFindsNothing() {
+        assertTrue(office.findBooking("nope").isEmpty());
     }
 
     @Test
