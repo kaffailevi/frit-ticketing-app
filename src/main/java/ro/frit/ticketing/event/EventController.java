@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -36,7 +37,7 @@ public class EventController {
 
     // GET /events?city=Iasi&name=cloud&from=2027-03-01T00:00:00&to=2027-04-01T00:00:00 — every filter optional.
     @GetMapping
-    public List<EventResponse> search(EventSearchRequest filter) {
+    public List<EventResponse> search(@ParameterObject EventSearchRequest filter) { // @ParameterObject: 4 query parameters in the docs
         return eventService.search(filter);
     }
 

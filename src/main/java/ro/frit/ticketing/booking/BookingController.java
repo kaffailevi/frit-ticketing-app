@@ -2,7 +2,12 @@ package ro.frit.ticketing.booking;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -28,7 +33,16 @@ public class BookingController {
 
     private final BookingService bookingService;
 
+    // springdoc sees the 201 from the code; the error answers come from GlobalExceptionHandler, so they are written here.
     @PostMapping
+    @Operation(summary = "Book seats for an event")
+    @ApiResponse(responseCode = "201", description = "Booked; the Location header points to the new booking")
+    @ApiResponse(responseCode = "400", description = "Invalid body: no valid email, or seats not positive",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "404", description = "No such event",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "409", description = "Not enough seats (availableSeats), already started (startsAt), or lost a race",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     public ResponseEntity<BookingResponse> book(@PathVariable String eventId, @Valid @RequestBody CreateBookingRequest body) {
         BookingResponse booking = bookingService.book(eventId, body);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(booking.id()).toUri();
