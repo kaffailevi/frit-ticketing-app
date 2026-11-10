@@ -11,6 +11,7 @@ import ro.frit.ticketing.event.EventService;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 
 // Books seats. The rules about the event itself (does it exist, has it started, are there enough seats)
@@ -37,17 +38,35 @@ public class BookingService {
 
     // The booking must belong to the event in the path; otherwise any booking could be read through any event's URL.
     public BookingResponse findById(String eventId, String bookingId) {
-        return bookingRepository.findById(bookingId)
-                .filter(booking -> booking.getEventId().equals(eventId))
-                .map(BookingResponse::from)
-                .orElseThrow(() -> new BookingNotFoundException(eventId, bookingId));
+        return BookingResponse.from(getBooking(eventId, bookingId));
+    }
+
+    public List<BookingResponse> findAllFor(String eventId) {
+        ensureEventExists(eventId);
+        return bookingRepository.findByEventIdOrderByBookedAt(eventId).stream().map(BookingResponse::from).toList();
+    }
+
+    // The seats go back to the event first: if the event has started, that throws and the booking stays.
+    public void cancel(String eventId, String bookingId) {
+        Booking booking = getBooking(eventId, bookingId);
+        eventService.releaseSeats(eventId, booking.getSeats());
+        bookingRepository.delete(booking);
     }
 
     // An event without bookings has an empty report; an unknown event is a 404.
     public BookingSummaryResponse summaryFor(String eventId) {
+        ensureEventExists(eventId);
+        return bookingRepository.summaryFor(eventId).orElseGet(() -> BookingSummaryResponse.empty(eventId));
+    }
+
+    private Booking getBooking(String eventId, String bookingId) {
+        return bookingRepository.findByIdAndEventId(bookingId, eventId)
+                .orElseThrow(() -> new BookingNotFoundException(eventId, bookingId));
+    }
+
+    private void ensureEventExists(String eventId) {
         if (!eventService.exists(eventId)) {
             throw new EventNotFoundException(eventId);
         }
-        return bookingRepository.summaryFor(eventId).orElseGet(() -> BookingSummaryResponse.empty(eventId));
     }
 }

@@ -81,6 +81,16 @@ public class EventService {
         eventRepository.save(event.withSeatsBooked(seats));
     }
 
+    // Called by BookingService when a booking is cancelled: the seats go back on sale, unless the event has started.
+    @Retryable(includes = OptimisticLockingFailureException.class, maxRetries = 3, delay = 20, jitter = 10)
+    public void releaseSeats(String eventId, int seats) {
+        Event event = getEvent(eventId);
+        if (event.hasStartedAt(now())) {
+            throw new EventAlreadyStartedException(eventId, event.getStartsAt());
+        }
+        eventRepository.save(event.withSeatsReleased(seats));
+    }
+
     private Event getEvent(String id) {
         return eventRepository.findById(id).orElseThrow(() -> new EventNotFoundException(id));
     }

@@ -16,6 +16,9 @@ The event used in the examples: **e1**, capacity 10, 8 seats already booked (2 f
 | 6 | The event starts right now | an event whose start time is now | `EventAlreadyStartedException` |
 | 7 | A confirmed booking | `e1`, 2 seats | stored with who booked and when; readable only under `e1` |
 | 8 | 20 customers book 1 seat each at the same moment, 10 seats exist | | never more than 10 seats booked; every confirmed booking stored and counted on the event (`ConcurrentBookingTest`) |
+| 9 | Cancel a booking of `e1` (session 5) | 2 seats | the booking is gone; the 2 seats are free again |
+| 10 | Cancel a booking through another event | | `BookingNotFoundException`; nothing changes |
+| 11 | Cancel a booking of an event that has started | | `EventAlreadyStartedException`; the booking stays |
 
 Invalid requests (0 seats, no email) never reach the services: Bean Validation refuses them in the controller (HTTP rows 6–8).
 
@@ -41,6 +44,9 @@ Body: `{"customerEmail": "ana@example.com", "seats": 2}`. The service is a mock 
 | 11 | `GET` a booking through another event's URL | 404 | a booking is only visible under its own event |
 | 12 | `GET /events/e1/bookings/summary` | 200 | `bookings`, `seats`, `averageSeatsPerBooking` (computed by MongoDB; empty report when there are no bookings) |
 | 13 | `GET /events/e9/bookings/summary`, no such event | 404 | a ProblemDetail |
+| 14 | `GET /events/e1/bookings` | 200 | the event's bookings, oldest first |
+| 15 | `DELETE /events/e1/bookings/b1` | 204 | no body; the seats go back on sale |
+| 16 | `DELETE` after the event started | 409 | `startsAt` |
 
 Every error is a ProblemDetail (`application/problem+json`).
 

@@ -8,11 +8,14 @@ import ro.frit.ticketing.MongoPersistenceTest;
 import ro.frit.ticketing.booking.dto.BookingResponse;
 import ro.frit.ticketing.booking.dto.BookingSummaryResponse;
 import ro.frit.ticketing.booking.dto.CreateBookingRequest;
+import ro.frit.ticketing.event.EventAlreadyStartedException;
 import ro.frit.ticketing.event.EventFixtures;
 import ro.frit.ticketing.event.EventNotFoundException;
 import ro.frit.ticketing.event.EventRepository;
 import ro.frit.ticketing.event.EventService;
 import ro.frit.ticketing.event.NotEnoughSeatsException;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -96,5 +99,42 @@ class BookingServiceTest {
     @Test
     void theSummaryOfAnUnknownEventIsNotFound() {
         assertThrows(EventNotFoundException.class, () -> bookingService.summaryFor("unknown"));
+    }
+
+    @Test
+    void theBookingsOfAnEventAreListedOldestFirst() {
+        BookingResponse first = bookingService.book("e1", new CreateBookingRequest("ana@example.com", 1));
+        BookingResponse second = bookingService.book("e1", new CreateBookingRequest("dan@example.com", 1));
+
+        assertEquals(List.of(first.id(), second.id()),
+                bookingService.findAllFor("e1").stream().map(BookingResponse::id).toList());
+    }
+
+    @Test
+    void aCancelledBookingIsGoneAndItsSeatsAreFreeAgain() {
+        BookingResponse booking = bookingService.book("e1", new CreateBookingRequest("ana@example.com", 2));
+
+        bookingService.cancel("e1", booking.id());
+
+        assertEquals(0, bookingRepository.count());
+        assertEquals(2, eventRepository.findById("e1").orElseThrow().availableSeats());
+    }
+
+    @Test
+    void aBookingCannotBeCancelledThroughAnotherEvent() {
+        BookingResponse booking = bookingService.book("e1", new CreateBookingRequest("ana@example.com", 1));
+
+        assertThrows(BookingNotFoundException.class, () -> bookingService.cancel("e2", booking.id()));
+        assertEquals(1, bookingRepository.count());
+    }
+
+    @Test
+    void aBookingForAnEventThatHasStartedCannotBeCancelled() {
+        eventRepository.save(EventFixtures.event("started", "Iasi", TODAY_AT_NOON.minusHours(1), 10, 1));
+        bookingRepository.save(Booking.builder().id("b-old").eventId("started").customerEmail("ana@example.com")
+                .seats(1).bookedAt(TODAY_AT_NOON.minusDays(2)).build());
+
+        assertThrows(EventAlreadyStartedException.class, () -> bookingService.cancel("started", "b-old"));
+        assertEquals(1, bookingRepository.count());
     }
 }

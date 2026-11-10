@@ -2,7 +2,10 @@ package ro.frit.ticketing.booking;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,6 +18,7 @@ import ro.frit.ticketing.booking.dto.BookingSummaryResponse;
 import ro.frit.ticketing.booking.dto.CreateBookingRequest;
 
 import java.net.URI;
+import java.util.List;
 
 // Cases: docs/booking-cases.md. 404 and 409 are exceptions from the services, answered by GlobalExceptionHandler.
 @RestController
@@ -29,6 +33,18 @@ public class BookingController {
         BookingResponse booking = bookingService.book(eventId, body);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(booking.id()).toUri();
         return ResponseEntity.created(location).body(booking);
+    }
+
+    @GetMapping
+    public List<BookingResponse> bookings(@PathVariable String eventId) {
+        return bookingService.findAllFor(eventId);
+    }
+
+    // After the first DELETE the booking is gone; repeating it answers 404 and changes nothing more.
+    @DeleteMapping("/{bookingId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancel(@PathVariable String eventId, @PathVariable String bookingId) {
+        bookingService.cancel(eventId, bookingId);
     }
 
     // "/summary" is more specific than "/{bookingId}", so Spring picks this method for it.
