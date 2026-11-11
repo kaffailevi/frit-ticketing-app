@@ -1,5 +1,10 @@
-# MongoDB and RabbitMQ for running the services locally:  docker compose up -d
-# (stop: docker compose down; also wipe the data: docker compose down -v)
+# The whole system with one command, from the images the Dockerfile builds:
+#   docker compose up --build --wait           # http://localhost:8080/events (through the gateway)
+#   docker compose down                        # stop; add -v to also wipe the data
+# Only MongoDB and RabbitMQ, to run the services from the IDE or with bootRun instead:
+#   docker compose up -d mongodb rabbitmq
+# Each container starts when what it needs is healthy, not merely running (depends_on + service_healthy).
+# If another program uses port 8080:  GATEWAY_PORT=8090 docker compose up --build --wait
 services:
   mongodb:
     image: mongo:8.0
@@ -7,12 +12,84 @@ services:
       - "27017:27017"
     volumes:
       - mongodb-data:/data/db
+    healthcheck:
+      test: [ "CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   rabbitmq:
     image: rabbitmq:4-management
     ports:
-      - "5672:5672"     # AMQP, for the services
+      - "5672:5672"     # AMQP, for services started outside Compose
       - "15672:15672"   # management UI: http://localhost:15672 (guest / guest)
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+
+  # The services have no published ports: inside Compose's network only the gateway reaches them.
+  ticketing-service:
+    build:
+      context: .
+      args:
+        SERVICE: ticketing-service
+        PORT: 8085
+    environment:
+      SPRING_MONGODB_HOST: mongodb        # the service names are host names on Compose's network
+      SPRING_RABBITMQ_HOST: rabbitmq
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512m                    # the heap takes 75 % of it (-XX:MaxRAMPercentage=75 in the Dockerfile)
+
+  notification-service:
+    build:
+      context: .
+      args:
+        SERVICE: notification-service
+        PORT: 8086
+    environment:
+      SPRING_MONGODB_HOST: mongodb
+      SPRING_RABBITMQ_HOST: rabbitmq
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+  # The one door: the only service with a published port.
+  api-gateway:
+    build:
+      context: .
+      args:
+        SERVICE: api-gateway
+        PORT: 8080
+    environment:
+      GATEWAY_TICKETINGURI: http://ticketing-service:8085          # gateway.ticketing-uri
+      GATEWAY_NOTIFICATIONSURI: http://notification-service:8086   # gateway.notifications-uri
+      GATEWAY_API_KEY: ${GATEWAY_API_KEY:-}                        # from your shell; empty: no key needed (local only)
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      ticketing-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512m
 
 volumes:
   mongodb-data:
