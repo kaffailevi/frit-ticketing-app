@@ -32,20 +32,25 @@ public class Routes {
         return Bucket4jCaffeine.<String>builderFor(Caffeine.newBuilder().maximumSize(100_000)).build().asAsync();
     }
 
+    // Filters run in the order listed: (on Cloud Run) the service's ID token, then the per-client limit, then the
+    // service. The token comes first so its own 503 never passes through the rate limiter, which adds headers to
+    // every response it sees (a ProblemDetail response's headers are read-only).
     @Bean
-    RouterFunction<ServerResponse> ticketingRoute(GatewayProperties properties) {
+    RouterFunction<ServerResponse> ticketingRoute(GatewayProperties properties, IdentityTokens identityTokens) {
         return route("ticketing")
                 .route(path("/events", "/events/**"), http())
                 .before(uri(properties.ticketingUri()))
+                .filter(identityTokens.authorizeFor(properties.ticketingUri()))
                 .filter(perClientRateLimit(properties.rateLimit()))
                 .build();
     }
 
     @Bean
-    RouterFunction<ServerResponse> notificationsRoute(GatewayProperties properties) {
+    RouterFunction<ServerResponse> notificationsRoute(GatewayProperties properties, IdentityTokens identityTokens) {
         return route("notifications")
                 .route(path("/notifications", "/notifications/**"), http())
                 .before(uri(properties.notificationsUri()))
+                .filter(identityTokens.authorizeFor(properties.notificationsUri()))
                 .filter(perClientRateLimit(properties.rateLimit()))
                 .build();
     }
