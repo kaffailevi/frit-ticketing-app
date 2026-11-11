@@ -47,6 +47,17 @@ ticketing:
       starts-at: 2027-04-02T09:30:00
       capacity: 60
 
+# health answers Docker and Cloud Run; info is harmless. Never expose everything: some endpoints show settings.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      probes:
+        enabled: true   # /actuator/health/liveness and /readiness, the two questions an orchestrator asks
+
 logging:
   pattern:
     level: "%5p [%X{correlationId:-}]"   # every log line shows the request's correlation id (empty outside a request)
