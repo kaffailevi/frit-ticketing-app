@@ -6,7 +6,7 @@ My version of the course project from **FutureReady IT — Module 2: modern arch
 
 ## Stack
 
-Java 25 · Spring Boot 4.1 (Web MVC, Bean Validation, ProblemDetail) · MongoDB 8 with Spring Data (Docker locally, Atlas in the cloud) · RabbitMQ 4 (Docker locally, CloudAMQP in the cloud) · Testcontainers · Spring Cloud Gateway (WebMVC) + Bucket4j · ArchUnit · Gradle 9 multi-module (Kotlin DSL, version catalog) · JUnit 6 + MockMvc · GitHub Actions
+Java 25 · Spring Boot 4.1 (Web MVC, Bean Validation, ProblemDetail) · MongoDB 8 with Spring Data (Docker locally, Atlas in the cloud) · RabbitMQ 4 (Docker locally, CloudAMQP in the cloud) · Testcontainers · Spring Cloud Gateway (WebMVC) + Bucket4j · Docker + Compose · ArchUnit · Gradle 9 multi-module (Kotlin DSL, version catalog) · JUnit 6 + MockMvc · GitHub Actions
 
 ## Services
 
@@ -18,16 +18,23 @@ Java 25 · Spring Boot 4.1 (Web MVC, Bean Validation, ProblemDetail) · MongoDB 
 
 ## Run it
 
-Locally, with MongoDB and RabbitMQ in Docker (each service in its own terminal):
+The whole system in containers, with one command (Docker only, no Java needed):
 
 ```bash
-docker compose up -d                          # MongoDB :27017, RabbitMQ :5672 (UI :15672, guest/guest)
-./gradlew :ticketing-service:bootRun          # http://localhost:8085/events — the learning events are seeded on the first start
-./gradlew :notification-service:bootRun       # http://localhost:8086/notifications
-./gradlew :api-gateway:bootRun                # http://localhost:8080/events — the way clients come in
+docker compose up --build --wait              # http://localhost:8080/events — the gateway is the only published port
+docker compose down                           # add -v to also wipe the data
 ```
 
-If another program already uses port 8080, start the gateway with `SERVER_PORT=8090`. Set `GATEWAY_API_KEY` to require an `X-Api-Key` header (always in the cloud; see [http/gateway.http](http/gateway.http)).
+Every service is built from the one [Dockerfile](Dockerfile) (`--build-arg SERVICE=… PORT=…`): built with a JDK, run on a JRE, layered, as a non-root user, with a health check on `/actuator/health/readiness`. Compose starts each container once what it needs is healthy. If another program already uses port 8080: `GATEWAY_PORT=8090 docker compose up --build --wait`. Set `GATEWAY_API_KEY` in the shell to require an `X-Api-Key` header (always in the cloud; see [http/gateway.http](http/gateway.http)).
+
+Or from the IDE / Gradle, with only MongoDB and RabbitMQ in Docker (each service in its own terminal):
+
+```bash
+docker compose up -d mongodb rabbitmq         # MongoDB :27017, RabbitMQ :5672 (UI :15672, guest/guest)
+./gradlew :ticketing-service:bootRun          # http://localhost:8085/events — the learning events are seeded on the first start
+./gradlew :notification-service:bootRun       # http://localhost:8086/notifications
+./gradlew :api-gateway:bootRun                # http://localhost:8080/events — the way clients come in (SERVER_PORT=8090 if 8080 is taken)
+```
 
 ### Following one request
 
@@ -38,7 +45,11 @@ Against MongoDB Atlas and CloudAMQP (`cloud` profile). It reads `MONGODB_HOST` (
 ```bash
 ./gradlew :ticketing-service:bootRun --args='--spring.profiles.active=cloud'
 ./gradlew :notification-service:bootRun --args='--spring.profiles.active=cloud'
+# or the same images as Cloud Run will run, against Atlas and CloudAMQP:
+docker compose -f compose.yml -f compose.cloud.yml up --build --wait api-gateway
 ```
+
+The images run on `Europe/Bucharest` time like a laptop here: event times are local times, and MongoDB stores them as instants, so a UTC container would show an 18:00 event as 16:00.
 
 Try it with the request files in [http/](http/) (IntelliJ HTTP client or VS Code REST Client). What each endpoint answers, including the errors: [docs/event-cases.md](docs/event-cases.md) and [docs/booking-cases.md](docs/booking-cases.md).
 
@@ -110,3 +121,4 @@ java Hello.java                                                    # a compact s
 | 5 | Complete API (PUT / DELETE events, list and cancel bookings); the `BookingEventPublisher` port with a logging adapter; events inside the application (`EventChanged`, `EventCancelled`) handled by `BookingService`; a unit test with the port mocked; OpenAPI + Swagger UI (springdoc) |
 | 6 | Two services in one Gradle build; the RabbitMQ adapter of the port (topic exchange, JSON, message ids); notification-service with durable queues, dead-letter queues and idempotent storage; `cloud` profiles for Atlas + CloudAMQP; architecture rules with ArchUnit |
 | 7 | `api-gateway` (Spring Cloud Gateway WebMVC): routes, Bucket4j rate limit per client (429 + Retry-After), one `X-Correlation-Id` through all services and RabbitMQ into every log line, API key for callers (`GATEWAY_API_KEY`) |
+| 8 | Containers: Actuator liveness/readiness in every service; one multi-stage, layered, non-root `Dockerfile` with a health check and a heap sized to the container; the whole system in `compose.yml` (started in order once healthy, only the gateway published); `compose.cloud.yml` for Atlas + CloudAMQP; CI builds the images |

@@ -1,4 +1,4 @@
-# Every push and pull request: compile and run all tests on a clean Linux machine with Java 25.
+# Every push and pull request: compile and run all tests on a clean Linux machine with Java 25, then build the images.
 name: Build
 
 on:
@@ -19,3 +19,4 @@ jobs:
           java-version: 25
       - uses: gradle/actions/setup-gradle@v5   # caches Gradle's downloads between runs
       - run: ./gradlew build
+      - run: docker compose build   # the three images build from the one Dockerfile
