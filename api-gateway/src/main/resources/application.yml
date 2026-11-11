@@ -4,9 +4,11 @@ spring:
 
 server:
   port: 8080
+  # Behind Cloud Run's front end: take the client's address and https from the X-Forwarded-* headers it adds.
+  forward-headers-strategy: native
 
-# Where the services run. Locally: the two bootRun ports. In Docker and on Cloud Run: environment variables
-# GATEWAY_TICKETING_URI and GATEWAY_NOTIFICATIONS_URI override these.
+# Where the services run. Locally: the two bootRun ports. In Docker and on Cloud Run the environment variables
+# GATEWAY_TICKETINGURI and GATEWAY_NOTIFICATIONSURI override these (gateway.ticketing-uri, without the dash).
 gateway:
   ticketing-uri: http://localhost:8085
   notifications-uri: http://localhost:8086
@@ -14,6 +16,11 @@ gateway:
   rate-limit:
     capacity: 20     # requests per client ...
     period: 10s      # ... per 10 seconds; the 21st gets 429
+  # Private Cloud Run services: an ID token per service from the metadata server. On Cloud Run only:
+  # GATEWAY_CLOUDRUNAUTH_ENABLED=true.
+  cloud-run-auth:
+    enabled: false
+    metadata-uri: http://metadata.google.internal
 
 management:
   endpoints:
