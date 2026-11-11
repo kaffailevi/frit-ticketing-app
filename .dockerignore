@@ -1,0 +1,12 @@
+# An allow-list: only what the build needs goes into the context, so nothing forgotten (a .env, .git, IDE files) leaks in.
+*
+!gradlew
+!gradle/
+!settings.gradle.kts
+!build.gradle.kts
+!ticketing-service/
+!notification-service/
+!api-gateway/
+**/build/
+**/bin/
+**/.gradle/
