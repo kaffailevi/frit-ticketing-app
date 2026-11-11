@@ -1,0 +1,27 @@
+# The same images against MongoDB Atlas and CloudAMQP instead of the local containers: a rehearsal for Cloud Run.
+#   docker compose -f compose.yml -f compose.cloud.yml up --build --wait api-gateway
+#   (the gateway pulls in both backends; the local MongoDB and RabbitMQ are not started)
+# The six variables come from your shell (Windows: user variables, loaded into the shell first), never from a file:
+#   MONGODB_HOST, MONGODB_USERNAME, MONGODB_PASSWORD, CLOUDAMQP_HOST, CLOUDAMQP_USERNAME, CLOUDAMQP_PASSWORD
+# Only their names are written here. Compose refuses to start if one is missing (the ":?" below).
+x-cloud-environment: &cloud
+  SPRING_PROFILES_ACTIVE: cloud          # application-cloud.yml: mongodb+srv, TLS on 5671, the vhost
+  # compose.yml points the hosts at the local containers; environment variables beat the profile's file,
+  # so the cloud hosts are set here as well.
+  SPRING_MONGODB_HOST: ${MONGODB_HOST:?set MONGODB_HOST}
+  SPRING_RABBITMQ_HOST: ${CLOUDAMQP_HOST:?set CLOUDAMQP_HOST}
+  MONGODB_HOST: ${MONGODB_HOST}
+  MONGODB_USERNAME: ${MONGODB_USERNAME:?set MONGODB_USERNAME}
+  MONGODB_PASSWORD: ${MONGODB_PASSWORD:?set MONGODB_PASSWORD}
+  CLOUDAMQP_HOST: ${CLOUDAMQP_HOST}
+  CLOUDAMQP_USERNAME: ${CLOUDAMQP_USERNAME:?set CLOUDAMQP_USERNAME}
+  CLOUDAMQP_PASSWORD: ${CLOUDAMQP_PASSWORD:?set CLOUDAMQP_PASSWORD}
+
+services:
+  ticketing-service:
+    environment: *cloud
+    depends_on: !reset {}    # nothing local to wait for
+
+  notification-service:
+    environment: *cloud
+    depends_on: !reset {}
