@@ -31,6 +31,11 @@ COPY --from=build /extracted/application/ ./
 # Never root: whoever breaks in gets a user that owns nothing.
 USER spring
 
+# Event times are Romanian wall-clock times (LocalDateTime), and MongoDB stores them as instants converted with
+# the JVM's time zone. Containers default to UTC, a laptop here to Europe/Bucharest: the same 18:00 event would
+# read as 16:00 in one and 18:00 in the other. One zone everywhere: the laptop's, in Docker and on Cloud Run.
+ENV TZ=Europe/Bucharest
+
 ARG PORT
 RUN test -n "$PORT" || { echo "Pass --build-arg PORT=<the service's server.port>"; exit 1; }
 ENV PORT=${PORT}
