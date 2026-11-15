@@ -166,4 +166,4 @@ gcloud run services update notification-service --min-instances 0   # done for t
 gcloud run services update notification-service --min-instances 1   # an hour before a demo
 ```
 
-At the end of the course: delete the three services, the `ticketing` repository and the three secrets (`gcloud run services delete …`, `gcloud artifacts repositories delete ticketing --location=$REGION`, `gcloud secrets delete …`).
+From now on a push to `main` deploys by itself: [github-actions.md](github-actions.md) (Session 10). Going back to an older revision: [rollback.md](rollback.md). Removing everything at the end: [cleanup.md](cleanup.md).

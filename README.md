@@ -51,7 +51,7 @@ docker compose -f compose.yml -f compose.cloud.yml up --build --wait api-gateway
 
 The images run on `Europe/Bucharest` time like a laptop here: event times are local times, and MongoDB stores them as instants, so a UTC container would show an 18:00 event as 16:00.
 
-On Google Cloud Run (the gateway public, the services private): [deploy/cloud-run.md](deploy/cloud-run.md).
+On Google Cloud Run (the gateway public, the services private): [deploy/cloud-run.md](deploy/cloud-run.md). After that first deploy by hand, every push to `main` deploys itself: [deploy/github-actions.md](deploy/github-actions.md); [deploy/rollback.md](deploy/rollback.md); [deploy/cleanup.md](deploy/cleanup.md).
 
 Try it with the request files in [http/](http/) (IntelliJ HTTP client or VS Code REST Client). What each endpoint answers, including the errors: [docs/event-cases.md](docs/event-cases.md) and [docs/booking-cases.md](docs/booking-cases.md).
 
@@ -125,3 +125,4 @@ java Hello.java                                                    # a compact s
 | 7 | `api-gateway` (Spring Cloud Gateway WebMVC): routes, Bucket4j rate limit per client (429 + Retry-After), one `X-Correlation-Id` through all services and RabbitMQ into every log line, API key for callers (`GATEWAY_API_KEY`) |
 | 8 | Containers: Actuator liveness/readiness in every service; one multi-stage, layered, non-root `Dockerfile` with a health check and a heap sized to the container; the whole system in `compose.yml` (started in order once healthy, only the gateway published); `compose.cloud.yml` for Atlas + CloudAMQP; CI builds the images |
 | 9 | Cloud Run: `IdentityTokens` (an ID token per private service from the metadata server, reused for 50 minutes, the client's `Authorization` never passed on; 503 ProblemDetail without one); [deploy/cloud-run.md](deploy/cloud-run.md): the gateway public, the services private, one service account each, the passwords in Secret Manager |
+| 10 | Ship it: the pipeline as a row of gates (`compile` → `test` → `images` → `deploy`); a push to `main` deploys with no key anywhere (Workload Identity Federation: GitHub's token for this repository and branch traded for an hour as `github-deployer`, three roles); images tagged with the commit SHA, revisions labelled `commit=<sha>`; a smoke test that respects the API key; [rollback](deploy/rollback.md) by moving traffic; [clean-up](deploy/cleanup.md) |
