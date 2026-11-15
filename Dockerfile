@@ -20,7 +20,9 @@ RUN java -Djarmode=tools -jar "${SERVICE}/build/libs/${SERVICE}.jar" extract --l
 
 # ---- run: only a JRE, the layers, and curl for the health check ---------------------------------------------
 FROM eclipse-temurin:25-jre
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/* \
+# Retries: the Ubuntu mirrors sometimes drop a connection from CI runners, and one lost download would fail the deploy.
+RUN apt-get -o Acquire::Retries=5 update \
+    && apt-get -o Acquire::Retries=5 install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/* \
     && useradd --system --uid 10001 spring
 WORKDIR /app
 # Least often changed first: a new commit only replaces the last, small layer.
